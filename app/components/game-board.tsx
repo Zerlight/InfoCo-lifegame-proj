@@ -6,6 +6,8 @@ type GameBoardProps = {
   cellSize?: number;
   grid: boolean[][];
   setGrid: React.Dispatch<React.SetStateAction<boolean[][]>>;
+  running: boolean;
+  mode: "draw" | "erase";
 };
 
 const GameBoard: React.FC<GameBoardProps> = ({
@@ -14,8 +16,11 @@ const GameBoard: React.FC<GameBoardProps> = ({
   cellSize = 10,
   grid,
   setGrid,
+  running,
+  mode = "draw",
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const [isDrawing, setIsDrawing] = useState(false);
 
   const drawGrid = () => {
     const canvas = canvasRef.current;
@@ -44,29 +49,66 @@ const GameBoard: React.FC<GameBoardProps> = ({
     for (let i = 0; i < rows; i++) {
       for (let j = 0; j < cols; j++) {
         if (grid[i][j]) {
-          ctx.fillStyle = "#000";
+          ctx.fillStyle = "#607D8B";
           ctx.fillRect(j * cellSize, i * cellSize, cellSize, cellSize);
         }
       }
     }
   };
 
-  const handleInput = (clientX: number, clientY: number) => {
+  const getCellCoordinates = (clientX: number, clientY: number) => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (!canvas) return null;
 
     const rect = canvas.getBoundingClientRect();
     const x = Math.floor((clientX - rect.left) / cellSize);
     const y = Math.floor((clientY - rect.top) / cellSize);
 
     if (x >= 0 && x < cols && y >= 0 && y < rows) {
-      setGrid((prev) => {
-        const newGrid = prev.map((row) => [...row]);
-        newGrid[y][x] = !newGrid[y][x];
-        return newGrid;
-      });
+      return { x, y };
     }
+    return null;
   };
+
+  const toggleCell = (clientX: number, clientY: number) => {
+    const coords = getCellCoordinates(clientX, clientY);
+    if (!coords) return;
+
+    const { x, y } = coords;
+    setGrid((prev) => {
+      const newGrid = prev.map((row) => [...row]);
+      newGrid[y][x] = !newGrid[y][x];
+      return newGrid;
+    });
+  };
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (running) return;
+    setIsDrawing(true);
+    toggleCell(e.clientX, e.clientY);
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (running || !isDrawing) return;
+    toggleCell(e.clientX, e.clientY);
+  };
+
+  const handleMouseUp = () => setIsDrawing(false);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (running) return;
+    setIsDrawing(true);
+    const touch = e.touches[0];
+    toggleCell(touch.clientX, touch.clientY);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (running || !isDrawing) return;
+    const touch = e.touches[0];
+    toggleCell(touch.clientX, touch.clientY);
+  };
+
+  const handleTouchEnd = () => setIsDrawing(false);
 
   useEffect(() => {
     drawGrid();
@@ -75,13 +117,16 @@ const GameBoard: React.FC<GameBoardProps> = ({
   return (
     <canvas
       ref={canvasRef}
+      className="touch-none"
       width={cols * cellSize}
       height={rows * cellSize}
-      onMouseDown={(e) => handleInput(e.clientX, e.clientY)}
-      onTouchStart={(e) => {
-        const touch = e.touches[0];
-        handleInput(touch.clientX, touch.clientY);
-      }}
+      onMouseDown={handleMouseDown}
+      onMouseMove={handleMouseMove}
+      onMouseUp={handleMouseUp}
+      onMouseLeave={handleMouseUp}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
     />
   );
 };
