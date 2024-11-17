@@ -77,7 +77,8 @@ const GameBoard: React.FC<GameBoardProps> = ({
     const { x, y } = coords;
     setGrid((prev) => {
       const newGrid = prev.map((row) => [...row]);
-      newGrid[y][x] = !newGrid[y][x];
+      newGrid[y][x] =
+        mode === "draw" ? true : mode === "erase" ? false : !newGrid[y][x];
       return newGrid;
     });
   };
