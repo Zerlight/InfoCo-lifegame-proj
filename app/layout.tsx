@@ -16,7 +16,14 @@ const geistMono = localFont({
 export const metadata: Metadata = {
   title: "InfoCo Game of Life",
   description: "Conway's Game of Life for infoCo Gamer's Night",
+  icons: {
+    icon: '/favicon.svg',
+  },
 };
+
+
+
+
 
 export default function RootLayout({
   children,
