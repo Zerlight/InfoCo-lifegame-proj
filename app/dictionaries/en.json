@@ -1,8 +1,9 @@
 {
-    "title": "Divination with Conway's Game of Life",
-    "description": "Draw a random pattern on the canvas and see what we will get.",
+    "title": "Conway's Game of Life Divination",
+    "description": "Draw a random pattern on the canvas and run.",
     "draw": "Draw",
     "erase": "Erase",
     "clear": "Cleared",
-    "run": "Running"
+    "run": "Running",
+    "speed": "Speed"
 }

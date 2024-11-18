@@ -21,6 +21,9 @@ const GameBoard: React.FC<GameBoardProps> = ({
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
+  if (typeof grid === "undefined" || typeof grid[0] === "undefined") {
+    throw new Error("Grid is not defined.\nPlease initalize the grid as a 2D array of booleans.");
+  }
 
   const drawGrid = () => {
     const canvas = canvasRef.current;
@@ -97,6 +100,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
   const handleMouseUp = () => setIsDrawing(false);
 
   const handleTouchStart = (e: React.TouchEvent) => {
+    e.preventDefault();
     if (running) return;
     setIsDrawing(true);
     const touch = e.touches[0];
@@ -118,7 +122,6 @@ const GameBoard: React.FC<GameBoardProps> = ({
   return (
     <canvas
       ref={canvasRef}
-      className="touch-none"
       width={cols * cellSize}
       height={rows * cellSize}
       onMouseDown={handleMouseDown}
@@ -128,6 +131,12 @@ const GameBoard: React.FC<GameBoardProps> = ({
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
+      style={{
+        touchAction: "none",
+        userSelect: "none",
+        WebkitUserSelect: "none",
+        WebkitTouchCallout: "none",
+      }}
     />
   );
 };

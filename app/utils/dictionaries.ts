@@ -1,3 +1,5 @@
+import en from "@/app/dictionaries/en.json";
+
 const dictionaries = {
   en: () =>
     import("@/app/dictionaries/en.json").then((module) => module.default),
@@ -5,12 +7,14 @@ const dictionaries = {
     import("@/app/dictionaries/zh.json").then((module) => module.default),
 };
 
-export type availableLocales = keyof typeof dictionaries;
+export type AvailableLocales = keyof typeof dictionaries;
 
-export const getDictionary = async (locale: availableLocales) =>
+export type Dictionary = typeof en;
+
+export const getDictionary = async (locale: AvailableLocales) =>
   dictionaries[locale]();
-
-export const matchLocale = (locale: string) => {
+  
+export const matchLocale = (locale: string): AvailableLocales => {
   if (locale.includes("zh")) return "zh";
   return "en";
 };
