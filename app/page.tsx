@@ -141,6 +141,7 @@ const AppPage = () => {
             disabled={running}
             activated={clear}
             onClick={() => {
+              if (clear) return;
               setGrid(
                 Array(boardDimensions.row).fill(
                   Array(boardDimensions.col).fill(false)
