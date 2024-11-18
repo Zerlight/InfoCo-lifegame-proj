@@ -8,6 +8,7 @@ type GameBoardProps = {
   setGrid: React.Dispatch<React.SetStateAction<boolean[][]>>;
   running: boolean;
   mode: "draw" | "erase";
+  drawGridLines?: boolean;
 };
 
 const GameBoard: React.FC<GameBoardProps> = ({
@@ -18,6 +19,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
   setGrid,
   running,
   mode = "draw",
+  drawGridLines = true,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
@@ -35,17 +37,19 @@ const GameBoard: React.FC<GameBoardProps> = ({
 
     // Draw grid lines
     ctx.strokeStyle = "#ddd";
-    for (let i = 0; i <= rows; i++) {
-      ctx.beginPath();
-      ctx.moveTo(0, i * cellSize);
-      ctx.lineTo(cols * cellSize, i * cellSize);
-      ctx.stroke();
-    }
-    for (let j = 0; j <= cols; j++) {
-      ctx.beginPath();
-      ctx.moveTo(j * cellSize, 0);
-      ctx.lineTo(j * cellSize, rows * cellSize);
-      ctx.stroke();
+    if (drawGridLines) {
+      for (let i = 0; i <= rows; i++) {
+        ctx.beginPath();
+        ctx.moveTo(0, i * cellSize);
+        ctx.lineTo(cols * cellSize, i * cellSize);
+        ctx.stroke();
+      }
+      for (let j = 0; j <= cols; j++) {
+        ctx.beginPath();
+        ctx.moveTo(j * cellSize, 0);
+        ctx.lineTo(j * cellSize, rows * cellSize);
+        ctx.stroke();
+      }
     }
 
     // Draw cells
@@ -117,7 +121,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
 
   useEffect(() => {
     drawGrid();
-  }, [grid]);
+  }, [grid, drawGridLines]);
 
   return (
     <canvas

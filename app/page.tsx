@@ -10,12 +10,13 @@ import {
   Dictionary,
 } from "@/app/utils/dictionaries";
 import Image from "next/image";
-import { Languages, Pen, Eraser, Trash2, Gauge, Play } from "lucide-react";
+import { Languages, Pen, Eraser, Trash2, Gauge, Play, Grid2x2Check, Grid2x2X } from "lucide-react";
 import TButton from "@/app/components/transition-button";
 import useMeasure from "react-use-measure";
 
 const AppPage = () => {
   const [running, setRunning] = useState(false);
+  const [drawGridLines, setDrawGridLines] = useState(true);
   const [boost, setBoost] = useState(false);
   const [clear, setClear] = useState(false);
   const [mode, setMode] = useState<"draw" | "erase">("draw");
@@ -108,6 +109,7 @@ const AppPage = () => {
               rows={boardDimensions.row}
               cols={boardDimensions.col}
               cellSize={10}
+              drawGridLines={drawGridLines}
             />
           )}
         </div>
@@ -158,6 +160,13 @@ const AppPage = () => {
           <TButton>
             <Gauge />
           </TButton>
+          <TButton
+            activated={drawGridLines}
+            onClick={() => setDrawGridLines(!drawGridLines)}>
+              {
+                drawGridLines ? <Grid2x2Check /> : <Grid2x2X />
+              }
+            </TButton>
         </div>
       </div>
     </div>
