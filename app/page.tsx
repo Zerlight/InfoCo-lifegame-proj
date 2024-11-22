@@ -14,9 +14,12 @@ import { Languages, Pen, Eraser, Trash2, Gauge, Play, Sparkles } from "lucide-re
 import TButton from "@/app/components/transition-button";
 import useMeasure from "react-use-measure";
 import OpenAI from "openai";
+import {z} from "zod";
+import { zodResponseFormat } from "openai/helpers/zod";
 
 const AppPage = () => {
   const [running, setRunning] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [boost, setBoost] = useState(false);
   const [clear, setClear] = useState(false);
   const [mode, setMode] = useState<"draw" | "erase">("draw");
@@ -33,10 +36,16 @@ const AppPage = () => {
   });
   const gameBoardRef = useRef<GameBoardHandles>(null);
   const openai = new OpenAI({
-    apiKey: 'sk-kACvlNBOPa3ZxjKeBb795aA05627484b812b19F4842e7330',
-    baseURL: 'https://aihubmix.com/v1',
+    apiKey: process.env.NEXT_PUBLIC_OPENAI_API_KEY,
+    baseURL: process.env.NEXT_PUBLIC_OPENAI_BASE_URL,
     dangerouslyAllowBrowser: true
   });
+
+  const Results = z.object({
+    origin: z.string(),
+    variation: z.string(),
+    summary: z.string()
+  })
 
   useEffect(() => {
     getDictionary(lang).then((result) => setDict(result));
@@ -169,31 +178,66 @@ const AppPage = () => {
           <TButton
             onClick={async ()=>{
               if(gameBoardRef.current){
-                const base64 = gameBoardRef.current.getCanvasBase64() as string;
-                const imageHtml = `<img src="${base64}" alt="Captured Image" style="width: auto; height: auto; max-width: 100%; max-height: 100%;">`;
-                const response = await openai.chat.completions.create({
-                  model: "gpt-4o-mini",
+                const template: number[] = gameBoardRef.current.getDivinatoryTrigrams();
+                const origin = template.map(num => 
+                  num === 0 || num === 2 ? '0' : '1'
+                ).join('');
+                
+                const variation = template.map(num => 
+                  num === 0 || num === 3 ? '0' : '1'
+                ).join('');
+                
+                const hexagramMap: Record<string, string> = {
+                  "111111": "乾",   "111110": "夬",   "111101": "大有", "111100": "大壮",
+                  "111011": "小畜", "111010": "需",   "111001": "大畜", "111000": "泰",
+                  "110111": "履",   "110110": "泽",   "110101": "睽",   "110100": "归妹",
+                  "110011": "中孚", "110010": "节",   "110001": "损",   "110000": "临",
+                  "101111": "同人", "101110": "革",   "101101": "火",   "101100": "丰",
+                  "101011": "家人", "101010": "既济", "101001": "贲",   "101000": "明夷",
+                  "100111": "无妄", "100110": "随",   "100101": "噬嗑", "100100": "雷",
+                  "100011": "益",   "100010": "屯",   "100001": "头",   "100000": "复",
+                  "011111": "姤",   "011110": "大过", "011101": "鼎",   "011100": "恒",
+                  "011011": "风",   "011010": "井",   "011001": "蛊",   "011000": "升",
+                  "010111": "讼",   "010110": "困",   "010101": "未济", "010100": "解",
+                  "010011": "涣",   "010010": "水",   "010001": "蒙",   "010000": "师",
+                  "001111": "遯",   "001110": "咸",   "001101": "旅",   "001100": "小过",
+                  "001011": "渐",   "001010": "蹇",   "001001": "山",   "001000": "谦",
+                  "000111": "否",   "000110": "萃",   "000101": "晋",   "000100": "豫",
+                  "000011": "观",   "000010": "比",   "000001": "剥",   "000000": "地"
+                };
+                const originHexagram = hexagramMap[origin];
+                const variationHexagram = hexagramMap[variation];
+                const response = await openai.beta.chat.completions.parse({
+                  model: "gpt-4o-mini-2024-07-18",
                   messages: [
+                    {
+                      role: "system",
+                      content:[
+                        {
+                          type: "text",
+                          text: "你是一个周易占卜师。用户会告诉你一次占卜中的本卦和变卦，请你对本卦和变卦各自做出解释，然后再给出一个总结性的占卜结果。"
+                        }
+                      ]
+                    },
                     {
                       role: "user",
                       content: [
-                        { type: "text", text: dict.prompt },
-                        {
-                          type: "image_url",
-                          image_url: {
-                            "url": base64,
-                          },
-                        },
+                        { 
+                          type: "text", 
+                          text: `本卦为${originHexagram}，变卦为${variationHexagram}`
+                        }
                       ],
                     },
                   ],
+                  response_format: zodResponseFormat(Results, "explaination")
                 });
-                const paraHtml = `<p>${response.choices[0].message.content}</p>`
-                const newWindow = window.open("", "_blank", "width=600,height=400");
-                if(newWindow){
-                  newWindow.document.write(imageHtml, paraHtml);
-                  newWindow.document.title = "Preview";
-                }
+                const explaination = response.choices[0].message.parsed
+                const paraHtml = `<p>${explaination?.origin}</p>\n<p>${explaination?.variation}</p>\n<p>${explaination?.summary}</p>\n<p>[DEBUG] 本卦为${originHexagram}，变卦为${variationHexagram}</p>`
+                 const newWindow = window.open("", "_blank", "width=600,height=400");
+                 if(newWindow){
+                   newWindow.document.write(paraHtml);
+                   newWindow.document.title = "Preview";
+                 }
               }
             }
             }

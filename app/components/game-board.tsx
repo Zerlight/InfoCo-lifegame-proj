@@ -11,7 +11,7 @@ type GameBoardProps = {
 };
 
 export interface GameBoardHandles {
-  getCanvasBase64: () => string | undefined;
+  getDivinatoryTrigrams: () => number[];
 }
 
 const GameBoard = forwardRef<GameBoardHandles, GameBoardProps>(({
@@ -27,14 +27,24 @@ const GameBoard = forwardRef<GameBoardHandles, GameBoardProps>(({
   const [isDrawing, setIsDrawing] = useState(false);
 
   useImperativeHandle(ref, () => ({
-    getCanvasBase64() {
-      const canvas = canvasRef.current;
-      if (!canvas) return undefined;
-      drawGrid(false); // Draw without grid lines for export
-      const base64 = canvas.toDataURL('image/png');
-      drawGrid(true); // Redraw with grid lines for continued editing
-      return base64;
-    }
+    getDivinatoryTrigrams() {
+      // eslint-disable-next-line prefer-const
+      let aliveCellNumber: number[] = [0, 0, 0, 0, 0, 0]
+      let counter: number = 0
+      for(let bi = 0; bi < 2; bi++){
+        for(let bj = 0; bj < 3; bj++){
+          for(let i = bi * rows / 2; i < (bi+1) * rows / 2; i++){
+            for(let j = bj * cols / 3; j < (bj+1) * cols / 3; j++){
+              if(grid[i][j] !== false){
+                aliveCellNumber[counter]+=1
+              }
+            } 
+          }
+          counter++
+        }
+      }
+      return aliveCellNumber.map((num) => num % 4)
+    },
   }));
   if (typeof grid === "undefined" || typeof grid[0] === "undefined") {
     throw new Error("Grid is not defined.\nPlease initalize the grid as a 2D array of booleans.");
@@ -132,6 +142,7 @@ const GameBoard = forwardRef<GameBoardHandles, GameBoardProps>(({
 
   const handleTouchEnd = () => setIsDrawing(false);
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const getCanvasBase64 = () => {
     drawGrid(false);
     const canvas = canvasRef.current;
@@ -140,7 +151,6 @@ const GameBoard = forwardRef<GameBoardHandles, GameBoardProps>(({
       drawGrid(true);
       return base64;
     }
-    
   }
 
   useEffect(() => {
