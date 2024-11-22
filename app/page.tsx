@@ -10,20 +10,33 @@ import {
   Dictionary,
 } from "@/app/utils/dictionaries";
 import Image from "next/image";
-import { Languages, Pen, Eraser, Trash2, Gauge, Play, Sparkles } from "lucide-react";
+import {
+  Languages,
+  Pen,
+  Eraser,
+  Trash2,
+  Play, Sparkles,
+  Grid2x2Check,
+  Grid2x2X,
+  Zap,
+  Rabbit,
+  Snail,
+} from "lucide-react";
 import TButton from "@/app/components/transition-button";
 import useMeasure from "react-use-measure";
 import OpenAI from "openai";
 import {z} from "zod";
 import { zodResponseFormat } from "openai/helpers/zod";
+import LoadingSpinner from "./components/loading-spinner";
 
 const AppPage = () => {
   const [running, setRunning] = useState(false);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [boost, setBoost] = useState(false);
+  const [drawGridLines, setDrawGridLines] = useState(true);
   const [clear, setClear] = useState(false);
   const [mode, setMode] = useState<"draw" | "erase">("draw");
   const [dict, setDict] = useState<Dictionary>();
+  const [speed, setSpeed] = useState(2);
   const [grid, setGrid] = useState<boolean[][]>([[]]);
   const [lang, setLang] = useState<AvailableLocales>(
     matchLocale(navigator.language)
@@ -55,16 +68,15 @@ const AppPage = () => {
     if (!running) return;
     const interval = setInterval(() => {
       setGrid((prev) => getNextGeneration(prev));
-    }, 100);
+    }, 200 / speed);
     return () => clearInterval(interval);
-  }, [running]);
+  }, [running, speed]);
 
   useEffect(() => {
     const _cols = Math.floor(boardMeasure.width / 10);
     const _rows = Math.floor(
       (boardMeasure.height - actionBarMeasure.height) / 10
     );
-    console.log(_rows, _cols);
     if (_rows > boardDimensions.row || _cols > boardDimensions.col) {
       const deltaRow = Math.max(_rows - boardDimensions.row, 0);
       const deltaCol = Math.max(_cols - boardDimensions.col, 0);
@@ -88,7 +100,6 @@ const AppPage = () => {
     )
       return;
     if (grid[0].length === 0) return;
-    console.log(grid);
     setBoardDimensions({
       row: grid.length,
       col: grid[0].length,
@@ -125,13 +136,14 @@ const AppPage = () => {
               rows={boardDimensions.row}
               cols={boardDimensions.col}
               cellSize={10}
+              drawGridLines={drawGridLines}
             />
           )}
         </div>
       </div>
       <div className="fixed bottom-0 left-0 right-0 bg-background border-t dark:border-t-neutral-800 border-t-neutral-200">
         <div
-          className="flex justify-evenly py-4 max-w-screen-xl mx-auto px-5 gap-1"
+          className="flex justify-evenly py-4 px-5 gap-1"
           ref={actionBarRef}
         >
           <TButton activated={running} onClick={() => setRunning(!running)}>
@@ -141,6 +153,7 @@ const AppPage = () => {
           <TButton
             activated={mode === "draw" && !running}
             disabled={running}
+            hidden={running && actionBarMeasure.width < 450}
             onClick={() => setMode("draw")}
           >
             <Pen />
@@ -149,6 +162,7 @@ const AppPage = () => {
           <TButton
             activated={mode === "erase" && !running}
             disabled={running}
+            hidden={running && actionBarMeasure.width < 450}
             onClick={() => setMode("erase")}
           >
             <Eraser />
@@ -156,6 +170,7 @@ const AppPage = () => {
           </TButton>
           <TButton
             disabled={running}
+            hidden={running && actionBarMeasure.width < 450}
             activated={clear}
             onClick={() => {
               if (clear) return;
@@ -166,14 +181,24 @@ const AppPage = () => {
               );
               setClear(true);
               setTimeout(() => setClear(false), 1000);
-            }
-            }
+            }}
           >
             <Trash2 />
-            <span>{dict.clear}</span>
           </TButton>
-          <TButton>
-            <Gauge />
+          <TButton
+            onClick={() => {
+              setSpeed(speed === 1 ? 2 : speed === 2 ? 20 : 1);
+            }}
+            activated={speed === 20}
+            hidden={!running && actionBarMeasure.width < 450}
+          >
+            {speed === 1 ? <Snail /> : speed === 2 ? <Rabbit /> : <Zap />}
+          </TButton>
+          <TButton
+            activated={drawGridLines}
+            onClick={() => setDrawGridLines(!drawGridLines)}
+          >
+            {drawGridLines ? <Grid2x2Check /> : <Grid2x2X />}
           </TButton>
           <TButton
             onClick={async ()=>{
@@ -249,14 +274,14 @@ const AppPage = () => {
       </div>
     </div>
   ) : (
-    <div className="flex flex-col justify-center items-center h-screen">
+    <div className="flex flex-col justify-center items-center h-screen gap-10">
       <Image
         src="/logo.svg"
         alt="logo"
         width={300}
         height={76.77}
-        className="animate-pulse"
       />
+      <LoadingSpinner size={48} />
     </div>
   );
 };
