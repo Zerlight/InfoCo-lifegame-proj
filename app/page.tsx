@@ -13,6 +13,7 @@ import Image from "next/image";
 import { Languages, Pen, Eraser, Trash2, Gauge, Play, Sparkles } from "lucide-react";
 import TButton from "@/app/components/transition-button";
 import useMeasure from "react-use-measure";
+import OpenAI from "openai";
 
 const AppPage = () => {
   const [running, setRunning] = useState(false);
@@ -31,6 +32,11 @@ const AppPage = () => {
     col: 0,
   });
   const gameBoardRef = useRef<GameBoardHandles>(null);
+  const openai = new OpenAI({
+    apiKey: 'sk-kACvlNBOPa3ZxjKeBb795aA05627484b812b19F4842e7330',
+    baseURL: 'https://aihubmix.com/v1',
+    dangerouslyAllowBrowser: true
+  });
 
   useEffect(() => {
     getDictionary(lang).then((result) => setDict(result));
@@ -161,13 +167,33 @@ const AppPage = () => {
             <Gauge />
           </TButton>
           <TButton
-            onClick={()=>{
-              const base64 = gameBoardRef.current?.getCanvasBase64();
-              const imageHtml = `<img src="${base64}" alt="Captured Image" style="width: auto; height: auto; max-width: 100%; max-height: 100%;">`;
-              const newWindow = window.open("", "_blank", "width=600,height=400");
-              if(newWindow){
-                newWindow.document.write(imageHtml);
-                newWindow.document.title = "Preview";
+            onClick={async ()=>{
+              if(gameBoardRef.current){
+                const base64 = gameBoardRef.current.getCanvasBase64() as string;
+                const imageHtml = `<img src="${base64}" alt="Captured Image" style="width: auto; height: auto; max-width: 100%; max-height: 100%;">`;
+                const response = await openai.chat.completions.create({
+                  model: "gpt-4o-mini",
+                  messages: [
+                    {
+                      role: "user",
+                      content: [
+                        { type: "text", text: dict.prompt },
+                        {
+                          type: "image_url",
+                          image_url: {
+                            "url": base64,
+                          },
+                        },
+                      ],
+                    },
+                  ],
+                });
+                const paraHtml = `<p>${response.choices[0].message.content}</p>`
+                const newWindow = window.open("", "_blank", "width=600,height=400");
+                if(newWindow){
+                  newWindow.document.write(imageHtml, paraHtml);
+                  newWindow.document.title = "Preview";
+                }
               }
             }
             }
