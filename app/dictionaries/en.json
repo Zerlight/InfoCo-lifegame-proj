@@ -3,5 +3,8 @@
     "description": "Draw a random pattern on the canvas and run.",
     "draw": "Draw",
     "erase": "Erase",
-    "run": "Running"
+    "clear": "Cleared",
+    "run": "Running",
+    "speed": "Speed",
+    "divine": "Divine"
 }
