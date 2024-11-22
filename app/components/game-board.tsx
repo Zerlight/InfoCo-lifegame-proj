@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from "react";
+import React, { useRef, useEffect, useState, useLayoutEffect } from "react";
 
 type GameBoardProps = {
   rows?: number;
@@ -22,10 +22,50 @@ const GameBoard: React.FC<GameBoardProps> = ({
   drawGridLines = true,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const requestRef = useRef<number>();
+  const [dimensions, setDimensions] = useState({ width: 500, height: 500 });
   const [isDrawing, setIsDrawing] = useState(false);
   if (typeof grid === "undefined" || typeof grid[0] === "undefined") {
     throw new Error("Grid is not defined.\nPlease initalize the grid as a 2D array of booleans.");
   }
+
+  const updateDimensions = () => {
+    if (!containerRef.current) return;
+    const container = containerRef.current;
+    const newWidth = container.clientWidth;
+    const newHeight = container.clientHeight;
+    
+    const newCols = Math.floor(newWidth / cellSize);
+    const newRows = Math.floor(newHeight / cellSize);
+    
+    setDimensions({ width: newWidth, height: newHeight });
+    
+    setGrid(prevGrid => {
+      const newGrid = Array(newRows).fill(0).map(() => 
+        Array(newCols).fill(false)
+      );
+      
+      for (let i = 0; i < Math.min(prevGrid.length, newRows); i++) {
+        for (let j = 0; j < Math.min(prevGrid[0].length, newCols); j++) {
+          newGrid[i][j] = prevGrid[i][j];
+        }
+      }
+      
+      return newGrid;
+    });
+  };
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+    
+    const observer = new ResizeObserver(updateDimensions);
+    observer.observe(containerRef.current);
+    
+    updateDimensions();
+
+    return () => observer.disconnect();
+  }, []);
 
   const drawGrid = () => {
     const canvas = canvasRef.current;
@@ -33,31 +73,37 @@ const GameBoard: React.FC<GameBoardProps> = ({
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
+    canvas.width = grid[0].length * cellSize;
+    canvas.height = grid.length * cellSize;
+
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Draw grid lines
-    ctx.strokeStyle = "#ddd";
     if (drawGridLines) {
-      for (let i = 0; i <= rows; i++) {
+      ctx.strokeStyle = "#ddd";
+      for (let i = 0; i <= grid.length; i++) {
         ctx.beginPath();
         ctx.moveTo(0, i * cellSize);
-        ctx.lineTo(cols * cellSize, i * cellSize);
+        ctx.lineTo(canvas.width, i * cellSize);
         ctx.stroke();
       }
-      for (let j = 0; j <= cols; j++) {
+      for (let j = 0; j <= grid[0].length; j++) {
         ctx.beginPath();
         ctx.moveTo(j * cellSize, 0);
-        ctx.lineTo(j * cellSize, rows * cellSize);
+        ctx.lineTo(j * cellSize, canvas.height);
         ctx.stroke();
       }
     }
 
-    // Draw cells
-    for (let i = 0; i < rows; i++) {
-      for (let j = 0; j < cols; j++) {
+    for (let i = 0; i < grid.length; i++) {
+      for (let j = 0; j < grid[0].length; j++) {
         if (grid[i][j]) {
           ctx.fillStyle = "#607D8B";
-          ctx.fillRect(j * cellSize, i * cellSize, cellSize, cellSize);
+          ctx.fillRect(
+            j * cellSize,
+            i * cellSize,
+            cellSize,
+            cellSize
+          );
         }
       }
     }
@@ -68,10 +114,13 @@ const GameBoard: React.FC<GameBoardProps> = ({
     if (!canvas) return null;
 
     const rect = canvas.getBoundingClientRect();
-    const x = Math.floor((clientX - rect.left) / cellSize);
-    const y = Math.floor((clientY - rect.top) / cellSize);
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    
+    const x = Math.floor((clientX - rect.left) * scaleX / cellSize);
+    const y = Math.floor((clientY - rect.top) * scaleY / cellSize);
 
-    if (x >= 0 && x < cols && y >= 0 && y < rows) {
+    if (x >= 0 && x < grid[0].length && y >= 0 && y < grid.length) {
       return { x, y };
     }
     return null;
@@ -119,29 +168,45 @@ const GameBoard: React.FC<GameBoardProps> = ({
 
   const handleTouchEnd = () => setIsDrawing(false);
 
-  useEffect(() => {
+  const animate = () => {
     drawGrid();
-  }, [grid, drawGridLines]);
+    requestRef.current = requestAnimationFrame(animate);
+  };
+
+  useLayoutEffect(() => {
+    animate();
+    
+    return () => {
+      if (requestRef.current) {
+        cancelAnimationFrame(requestRef.current);
+      }
+    };
+  }, [cols, rows, cellSize, dimensions, grid]);
 
   return (
-    <canvas
-      ref={canvasRef}
-      width={cols * cellSize}
-      height={rows * cellSize}
-      onMouseDown={handleMouseDown}
-      onMouseMove={handleMouseMove}
-      onMouseUp={handleMouseUp}
-      onMouseLeave={handleMouseUp}
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
-      style={{
-        touchAction: "none",
-        userSelect: "none",
-        WebkitUserSelect: "none",
-        WebkitTouchCallout: "none",
-      }}
-    />
+    <div 
+      ref={containerRef} 
+      style={{ width: '100%', height: '100%' }}
+    >
+      <canvas
+        ref={canvasRef}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseUp}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        style={{
+          touchAction: "none",
+          userSelect: "none",
+          WebkitUserSelect: "none",
+          WebkitTouchCallout: "none",
+          width: '100%',
+          height: '100%',
+        }}
+      />
+    </div>
   );
 };
 
