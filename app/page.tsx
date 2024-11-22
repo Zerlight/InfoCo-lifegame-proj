@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import TButton from "@/app/components/transition-button";
 import useMeasure from "react-use-measure";
+import LoadingSpinner from "./components/loading-spinner";
 
 const AppPage = () => {
   const [running, setRunning] = useState(false);
@@ -186,14 +187,14 @@ const AppPage = () => {
       </div>
     </div>
   ) : (
-    <div className="flex flex-col justify-center items-center h-screen">
+    <div className="flex flex-col justify-center items-center h-screen gap-10">
       <Image
         src="/logo.svg"
         alt="logo"
         width={300}
         height={76.77}
-        className="animate-pulse"
       />
+      <LoadingSpinner size={48} />
     </div>
   );
 };
