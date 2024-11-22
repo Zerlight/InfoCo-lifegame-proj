@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import GameBoard from "@/app/components/game-board";
+import React, { useState, useEffect, useRef} from "react";
+import GameBoard, {GameBoardHandles} from "@/app/components/game-board";
 import { getNextGeneration } from "@/app/utils/game-logic";
 import {
   getDictionary,
@@ -10,7 +10,7 @@ import {
   Dictionary,
 } from "@/app/utils/dictionaries";
 import Image from "next/image";
-import { Languages, Pen, Eraser, Trash2, Gauge, Play } from "lucide-react";
+import { Languages, Pen, Eraser, Trash2, Gauge, Play, Sparkles } from "lucide-react";
 import TButton from "@/app/components/transition-button";
 import useMeasure from "react-use-measure";
 
@@ -30,6 +30,7 @@ const AppPage = () => {
     row: 0,
     col: 0,
   });
+  const gameBoardRef = useRef<GameBoardHandles>(null);
 
   useEffect(() => {
     getDictionary(lang).then((result) => setDict(result));
@@ -101,6 +102,7 @@ const AppPage = () => {
         <div className="mx-auto">
           {boardDimensions.row !== 0 && boardDimensions.col !== 0 && (
             <GameBoard
+              ref={gameBoardRef}
               grid={grid}
               setGrid={setGrid}
               running={running}
@@ -157,6 +159,21 @@ const AppPage = () => {
           </TButton>
           <TButton>
             <Gauge />
+          </TButton>
+          <TButton
+            onClick={()=>{
+              const base64 = gameBoardRef.current?.getCanvasBase64();
+              const imageHtml = `<img src="${base64}" alt="Captured Image" style="width: auto; height: auto; max-width: 100%; max-height: 100%;">`;
+              const newWindow = window.open("", "_blank", "width=600,height=400");
+              if(newWindow){
+                newWindow.document.write(imageHtml);
+                newWindow.document.title = "Preview";
+              }
+            }
+            }
+          >
+            <Sparkles />
+            <span>{dict.divine}</span>
           </TButton>
         </div>
       </div>

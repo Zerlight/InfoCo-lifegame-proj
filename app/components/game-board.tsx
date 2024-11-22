@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from "react";
+import React, { useRef, useState, useEffect, useImperativeHandle, forwardRef } from 'react';
 
 type GameBoardProps = {
   rows?: number;
@@ -10,22 +10,37 @@ type GameBoardProps = {
   mode: "draw" | "erase";
 };
 
-const GameBoard: React.FC<GameBoardProps> = ({
+export interface GameBoardHandles {
+  getCanvasBase64: () => string | undefined;
+}
+
+const GameBoard = forwardRef<GameBoardHandles, GameBoardProps>(({
   rows = 50,
   cols = 50,
   cellSize = 10,
   grid,
   setGrid,
   running,
-  mode = "draw",
-}) => {
+  mode = "draw"
+}, ref) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
+
+  useImperativeHandle(ref, () => ({
+    getCanvasBase64() {
+      const canvas = canvasRef.current;
+      if (!canvas) return undefined;
+      drawGrid(false); // Draw without grid lines for export
+      const base64 = canvas.toDataURL('image/png');
+      drawGrid(true); // Redraw with grid lines for continued editing
+      return base64;
+    }
+  }));
   if (typeof grid === "undefined" || typeof grid[0] === "undefined") {
     throw new Error("Grid is not defined.\nPlease initalize the grid as a 2D array of booleans.");
   }
 
-  const drawGrid = () => {
+  const drawGrid = (flag: boolean) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
@@ -35,17 +50,19 @@ const GameBoard: React.FC<GameBoardProps> = ({
 
     // Draw grid lines
     ctx.strokeStyle = "#ddd";
-    for (let i = 0; i <= rows; i++) {
-      ctx.beginPath();
-      ctx.moveTo(0, i * cellSize);
-      ctx.lineTo(cols * cellSize, i * cellSize);
-      ctx.stroke();
-    }
-    for (let j = 0; j <= cols; j++) {
-      ctx.beginPath();
-      ctx.moveTo(j * cellSize, 0);
-      ctx.lineTo(j * cellSize, rows * cellSize);
-      ctx.stroke();
+    if(flag){
+      for (let i = 0; i <= rows; i++) {
+        ctx.beginPath();
+        ctx.moveTo(0, i * cellSize);
+        ctx.lineTo(cols * cellSize, i * cellSize);
+        ctx.stroke();
+      }
+      for (let j = 0; j <= cols; j++) {
+        ctx.beginPath();
+        ctx.moveTo(j * cellSize, 0);
+        ctx.lineTo(j * cellSize, rows * cellSize);
+        ctx.stroke();
+      }
     }
 
     // Draw cells
@@ -115,8 +132,19 @@ const GameBoard: React.FC<GameBoardProps> = ({
 
   const handleTouchEnd = () => setIsDrawing(false);
 
+  const getCanvasBase64 = () => {
+    drawGrid(false);
+    const canvas = canvasRef.current;
+    if(canvas){
+      const base64 = canvas.toDataURL("image/png");
+      drawGrid(true);
+      return base64;
+    }
+    
+  }
+
   useEffect(() => {
-    drawGrid();
+    drawGrid(true);
   }, [grid]);
 
   return (
@@ -139,6 +167,8 @@ const GameBoard: React.FC<GameBoardProps> = ({
       }}
     />
   );
-};
+});
+
+GameBoard.displayName = 'GameBoard';
 
 export default GameBoard;
