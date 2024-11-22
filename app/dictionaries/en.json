@@ -6,6 +6,5 @@
     "clear": "Cleared",
     "run": "Running",
     "speed": "Speed",
-    "divine": "Divine",
-    "prompt": "This is a picture of all the cells that make up the Conway Game of Life at a certain point in time. We use this image for a kind of “divination”. Tell the user what everyday object or scene the abstract picture make up resembles, and then make a positive prediction about the future based on its meaning. Since we want to diversify the results of divination, you can imagine points that are closer together in distance connecting together, making sure not to say it looks like a starry sky! It could also look like many other things."
+    "divine": "Divine"
 }
