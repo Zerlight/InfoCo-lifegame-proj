@@ -1,10 +1,12 @@
 {
     "title": "Conway's Game of Life Divination",
     "description": "Draw a random pattern on the canvas and run.",
+    "divineDescription": "Check your divination results.",
     "draw": "Draw",
     "erase": "Erase",
     "clear": "Cleared",
     "run": "Running",
     "speed": "Speed",
-    "divine": "Divine"
+    "divine": "Divining",
+    "language": "English"
 }

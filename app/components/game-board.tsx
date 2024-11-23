@@ -47,11 +47,24 @@ const GameBoard = forwardRef<GameBoardHandles, GameBoardProps>(
       getDivinatoryTrigrams() {
         let aliveCellNumber: number[] = [0, 0, 0, 0, 0, 0];
         let counter: number = 0;
+        console.log("Grid dimensions:", grid.length, "x", grid[0].length);
+        console.log("Rows:", rows, "Cols:", cols);
+
         for (let bi = 0; bi < 2; bi++) {
           for (let bj = 0; bj < 3; bj++) {
-            for (let i = (bi * rows) / 2; i < ((bi + 1) * rows) / 2; i++) {
-              for (let j = (bj * cols) / 3; j < ((bj + 1) * cols) / 3; j++) {
-                if (grid[i][j] !== false) {
+            console.log(`Block: bi=${bi}, bj=${bj}`);
+            const startI = Math.floor((bi * rows) / 2);
+            const endI = Math.floor(((bi + 1) * rows) / 2);
+            const startJ = Math.floor((bj * cols) / 3);
+            const endJ = Math.floor(((bj + 1) * cols) / 3);
+
+            console.log(
+              `Scanning area: i=${startI}-${endI}, j=${startJ}-${endJ}`
+            );
+
+            for (let i = startI; i < endI; i++) {
+              for (let j = startJ; j < endJ; j++) {
+                if (grid[i]?.[j] === true) {
                   aliveCellNumber[counter] += 1;
                 }
               }
@@ -59,6 +72,7 @@ const GameBoard = forwardRef<GameBoardHandles, GameBoardProps>(
             counter++;
           }
         }
+        console.log("Alive cell counts:", aliveCellNumber);
         return aliveCellNumber.map((num) => num % 4);
       },
       getCanvasBase64() {
@@ -67,7 +81,7 @@ const GameBoard = forwardRef<GameBoardHandles, GameBoardProps>(
           const base64 = canvas.toDataURL("image/png");
           return base64;
         }
-      }
+      },
     }));
 
     if (typeof grid === "undefined" || typeof grid[0] === "undefined") {
@@ -222,7 +236,7 @@ const GameBoard = forwardRef<GameBoardHandles, GameBoardProps>(
           cancelAnimationFrame(requestRef.current);
         }
       };
-    }, [cols, rows, cellSize, dimensions, grid]);
+    }, [cols, rows, cellSize, dimensions, grid, drawGridLines]);
 
     return (
       <div ref={containerRef} style={{ width: "100%", height: "100%" }}>

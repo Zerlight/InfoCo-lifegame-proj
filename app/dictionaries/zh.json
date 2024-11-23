@@ -1,10 +1,12 @@
 {
     "title": "康威生命游戏占卜",
     "description": "在画布上绘制一个随机图案，看看会得到什么。",
+    "divineDescription": "查看您的占卜结果。",
     "draw": "绘制",
     "erase": "擦除",
     "clear": "已清除",
     "run": "运行中",
     "speed": "速度",
-    "divine": "占卜"
+    "divine": "占卜中",
+    "language": "中文"
 }

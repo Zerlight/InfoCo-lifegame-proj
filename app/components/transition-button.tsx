@@ -8,7 +8,6 @@ export default function TButton({
   activated,
   activatedContent,
   disabled,
-  hidden,
   onClick,
   ...props
 }: {
@@ -19,30 +18,17 @@ export default function TButton({
   className?: string;
   activated?: boolean;
   disabled?: boolean;
-  hidden?: boolean;
   onClick?: () => void;
   [key: string]: any;
 }) {
   const [textRef, textMeasure] = useMeasure();
-  const [buttonRef, buttonMeasure] = useMeasure();
   const textSpring = useSpring({
     width: activated ? textMeasure.width : 0,
     opacity: activated ? 1 : 0,
     config: { tension: 180, friction: 24 },
   });
-  const buttonSpring = useSpring({
-    width: hidden ? 0 : buttonMeasure.width,
-    opacity: hidden ? 0 : 1,
-    config: { tension: 180, friction: 24 },
-  });
 
   return (
-    <animated.div
-      style={{
-        ...buttonSpring,
-        pointerEvents: hidden ? "none" : "auto",
-      }}
-    >
       <button
         className={clsx(
           activated
@@ -55,7 +41,6 @@ export default function TButton({
         )}
         disabled={disabled}
         onClick={disabled ? undefined : onClick}
-        ref={buttonRef}
         {...props}
       >
         {Array.isArray(children) ? (
@@ -79,6 +64,5 @@ export default function TButton({
           children
         )}
       </button>
-    </animated.div>
   );
 }

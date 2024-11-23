@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState, useEffect, useRef} from "react";
-import GameBoard, {GameBoardHandles} from "@/app/components/game-board";
+import clsx from "clsx";
+import React, { useState, useEffect, useRef } from "react";
+import GameBoard, { GameBoardHandles } from "@/app/components/game-board";
 import { getNextGeneration } from "@/app/utils/game-logic";
 import {
   getDictionary,
@@ -15,25 +16,28 @@ import {
   Pen,
   Eraser,
   Trash2,
-  Play, Sparkles,
+  Play,
+  Sparkles,
   Grid2x2Check,
   Grid2x2X,
   Zap,
   Rabbit,
   Snail,
+  Undo2,
 } from "lucide-react";
 import TButton from "@/app/components/transition-button";
 import useMeasure from "react-use-measure";
-import OpenAI from "openai";
-import {z} from "zod";
-import { zodResponseFormat } from "openai/helpers/zod";
-import LoadingSpinner from "./components/loading-spinner";
+import LoadingSpinner from "@/app/components/loading-spinner";
+import { getGuaInfo, getOpenAIResponse } from "@/app/utils/gua-intepreter";
+import { useSpring, animated } from "@react-spring/web";
+import GuaCard from "@/app/components/gua-card";
+import AiCard from "@/app/components/ai-card";
 
 const AppPage = () => {
   const [running, setRunning] = useState(false);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [drawGridLines, setDrawGridLines] = useState(true);
   const [clear, setClear] = useState(false);
+  const [langAct, setLangAct] = useState(false);
   const [mode, setMode] = useState<"draw" | "erase">("draw");
   const [dict, setDict] = useState<Dictionary>();
   const [speed, setSpeed] = useState(2);
@@ -41,24 +45,55 @@ const AppPage = () => {
   const [lang, setLang] = useState<AvailableLocales>(
     matchLocale(navigator.language)
   );
+  const [showDivine, setShowDivine] = useState<boolean | null>(false);
   const [boardRef, boardMeasure] = useMeasure();
   const [actionBarRef, actionBarMeasure] = useMeasure();
   const [boardDimensions, setBoardDimensions] = useState({
     row: 0,
     col: 0,
   });
+  const [guaResults, setGuaResults] = useState<{
+    originResult?: {
+      name: string;
+      binary: string;
+      "gua-detail": string;
+      "yao-detail": string[];
+    };
+    variationResult?: {
+      name: string;
+      binary: string;
+      "gua-detail": string;
+      "yao-detail": string[];
+    };
+  } | null>(null);
+  const [openaiResponse, setOpenaiResponse] = useState<{
+    origin?: string;
+    variation?: string;
+    summary?: string;
+  } | null>(null);
   const gameBoardRef = useRef<GameBoardHandles>(null);
-  const openai = new OpenAI({
-    apiKey: process.env.NEXT_PUBLIC_OPENAI_API_KEY,
-    baseURL: process.env.NEXT_PUBLIC_OPENAI_BASE_URL,
-    dangerouslyAllowBrowser: true
+  const boardSpring = useSpring({
+    opacity: !showDivine ? 1 : 0,
+    transform: showDivine
+      ? "scale(0.5) translateY(100%)"
+      : "scale(1) translateY(0%)",
+    config: { tension: 180, friction: 24 },
   });
-
-  const Results = z.object({
-    origin: z.string(),
-    variation: z.string(),
-    summary: z.string()
-  })
+  const actionSpring = useSpring({
+    transform: showDivine ? "translateY(100%)" : "translateY(0%)",
+    config: { tension: 180, friction: 24 },
+  });
+  const divineSpring = useSpring({
+    opacity: showDivine ? 1 : 0,
+    transform: showDivine
+      ? "scale(1) translateY(0%)"
+      : "scale(1.5) translateY(100%)",
+    config: { tension: 180, friction: 24 },
+    onRest: () => {
+      if (showDivine === true) return;
+      setShowDivine(false);
+    },
+  });
 
   useEffect(() => {
     getDictionary(lang).then((result) => setDict(result));
@@ -106,8 +141,30 @@ const AppPage = () => {
     });
   }, [grid]);
 
+  const generateDivine = async () => {
+    if (!gameBoardRef.current) return;
+    setGuaResults(null);
+    setOpenaiResponse(null);
+    setShowDivine(false);
+    const template: number[] = gameBoardRef.current.getDivinatoryTrigrams();
+    const origin = template
+      .map((num) => (num === 0 || num === 2 ? "0" : "1"))
+      .join("");
+    const variation = template
+      .map((num) => (num === 0 || num === 3 ? "0" : "1"))
+      .join("");
+    getGuaInfo(origin, variation).then((guaInfo) => {
+      setGuaResults(guaInfo);
+      if (!showDivine) setShowDivine(true);
+    });
+    getOpenAIResponse(origin, variation).then((openaiResponse) => {
+      setOpenaiResponse(openaiResponse);
+      if (!showDivine) setShowDivine(true);
+    });
+  };
+
   return dict ? (
-    <div className="px-5 py-3 flex flex-col min-h-screen">
+    <div className="px-5 py-3 flex flex-col min-h-dvh">
       <div className="flex flex-col mb-4">
         <div className="flex justify-between items-center mt-1.5">
           <Image
@@ -117,14 +174,37 @@ const AppPage = () => {
             height={25.59}
             className="dark:invert"
           />
-          <button onClick={() => setLang(lang === "en" ? "zh" : "en")}>
-            <Languages />
-          </button>
+          <div className="flex gap-1">
+            <TButton onClick={() => setDrawGridLines(!drawGridLines)}>
+              {drawGridLines ? <Grid2x2Check /> : <Grid2x2X />}
+            </TButton>
+            <TButton
+              onClick={() => {
+                setSpeed(speed === 1 ? 2 : speed === 2 ? 20 : 1);
+              }}
+              activated={speed === 20}
+            >
+              {speed === 1 ? <Snail /> : speed === 2 ? <Rabbit /> : <Zap />}
+            </TButton>
+            <TButton
+              onClick={() => {
+                setLang(lang === "en" ? "zh" : "en");
+                setLangAct(true);
+                setTimeout(() => setLangAct(false), 1000);
+              }}
+              activated={langAct}
+            >
+              <Languages />
+              <span>{dict.language}</span>
+            </TButton>
+          </div>
         </div>
         <span className="text-2xl font-bold mt-3">{dict.title}</span>
-        <span className="text-md">{dict.description}</span>
+        <span className="text-md">
+          {showDivine ? dict.divineDescription : dict.description}
+        </span>
       </div>
-      <div className="flex-1" ref={boardRef}>
+      <animated.div className="flex-1" ref={boardRef} style={boardSpring}>
         <div className="mx-auto">
           {boardDimensions.row !== 0 && boardDimensions.col !== 0 && (
             <GameBoard
@@ -140,20 +220,26 @@ const AppPage = () => {
             />
           )}
         </div>
-      </div>
-      <div className="fixed bottom-0 left-0 right-0 bg-background border-t dark:border-t-neutral-800 border-t-neutral-200">
-        <div
-          className="flex justify-evenly py-4 px-5 gap-1"
-          ref={actionBarRef}
-        >
-          <TButton activated={running} onClick={() => setRunning(!running)}>
+      </animated.div>
+      <animated.div
+        className={clsx(
+          "fixed bottom-0 left-0 right-0 bg-background border-t dark:border-t-neutral-800 border-t-neutral-200",
+          showDivine ? "z-0 touch-none select-none" : "z-10"
+        )}
+        style={actionSpring}
+      >
+        <div className="flex justify-evenly py-4 px-5 gap-1" ref={actionBarRef}>
+          <TButton
+            activated={running}
+            onClick={() => setRunning(!running)}
+            disabled={showDivine === true}
+          >
             <Play />
             <span>{dict.run}</span>
           </TButton>
           <TButton
             activated={mode === "draw" && !running}
-            disabled={running}
-            hidden={running && actionBarMeasure.width < 450}
+            disabled={running || showDivine === true}
             onClick={() => setMode("draw")}
           >
             <Pen />
@@ -161,16 +247,14 @@ const AppPage = () => {
           </TButton>
           <TButton
             activated={mode === "erase" && !running}
-            disabled={running}
-            hidden={running && actionBarMeasure.width < 450}
+            disabled={running || showDivine === true}
             onClick={() => setMode("erase")}
           >
             <Eraser />
             <span>{dict.erase}</span>
           </TButton>
           <TButton
-            disabled={running}
-            hidden={running && actionBarMeasure.width < 450}
+            disabled={running || showDivine === true}
             activated={clear}
             onClick={() => {
               if (clear) return;
@@ -184,103 +268,68 @@ const AppPage = () => {
             }}
           >
             <Trash2 />
+            <span>{dict.clear}</span>
           </TButton>
-          <TButton
-            onClick={() => {
-              setSpeed(speed === 1 ? 2 : speed === 2 ? 20 : 1);
-            }}
-            activated={speed === 20}
-            hidden={!running && actionBarMeasure.width < 450}
-          >
-            {speed === 1 ? <Snail /> : speed === 2 ? <Rabbit /> : <Zap />}
-          </TButton>
-          <TButton
-            activated={drawGridLines}
-            onClick={() => setDrawGridLines(!drawGridLines)}
-          >
-            {drawGridLines ? <Grid2x2Check /> : <Grid2x2X />}
-          </TButton>
-          <TButton
-            onClick={async ()=>{
-              if(gameBoardRef.current){
-                const template: number[] = gameBoardRef.current.getDivinatoryTrigrams();
-                const origin = template.map(num => 
-                  num === 0 || num === 2 ? '0' : '1'
-                ).join('');
-                
-                const variation = template.map(num => 
-                  num === 0 || num === 3 ? '0' : '1'
-                ).join('');
-                
-                const hexagramMap: Record<string, string> = {
-                  "111111": "乾",   "111110": "夬",   "111101": "大有", "111100": "大壮",
-                  "111011": "小畜", "111010": "需",   "111001": "大畜", "111000": "泰",
-                  "110111": "履",   "110110": "泽",   "110101": "睽",   "110100": "归妹",
-                  "110011": "中孚", "110010": "节",   "110001": "损",   "110000": "临",
-                  "101111": "同人", "101110": "革",   "101101": "火",   "101100": "丰",
-                  "101011": "家人", "101010": "既济", "101001": "贲",   "101000": "明夷",
-                  "100111": "无妄", "100110": "随",   "100101": "噬嗑", "100100": "雷",
-                  "100011": "益",   "100010": "屯",   "100001": "头",   "100000": "复",
-                  "011111": "姤",   "011110": "大过", "011101": "鼎",   "011100": "恒",
-                  "011011": "风",   "011010": "井",   "011001": "蛊",   "011000": "升",
-                  "010111": "讼",   "010110": "困",   "010101": "未济", "010100": "解",
-                  "010011": "涣",   "010010": "水",   "010001": "蒙",   "010000": "师",
-                  "001111": "遯",   "001110": "咸",   "001101": "旅",   "001100": "小过",
-                  "001011": "渐",   "001010": "蹇",   "001001": "山",   "001000": "谦",
-                  "000111": "否",   "000110": "萃",   "000101": "晋",   "000100": "豫",
-                  "000011": "观",   "000010": "比",   "000001": "剥",   "000000": "地"
-                };
-                const originHexagram = hexagramMap[origin];
-                const variationHexagram = hexagramMap[variation];
-                const response = await openai.beta.chat.completions.parse({
-                  model: "gpt-4o-mini-2024-07-18",
-                  messages: [
-                    {
-                      role: "system",
-                      content:[
-                        {
-                          type: "text",
-                          text: "你是一个周易占卜师。用户会告诉你一次占卜中的本卦和变卦，请你对本卦和变卦各自做出解释，然后再给出一个总结性的占卜结果。"
-                        }
-                      ]
-                    },
-                    {
-                      role: "user",
-                      content: [
-                        { 
-                          type: "text", 
-                          text: `本卦为${originHexagram}，变卦为${variationHexagram}`
-                        }
-                      ],
-                    },
-                  ],
-                  response_format: zodResponseFormat(Results, "explaination")
-                });
-                const explaination = response.choices[0].message.parsed
-                const paraHtml = `<p>${explaination?.origin}</p>\n<p>${explaination?.variation}</p>\n<p>${explaination?.summary}</p>\n<p>[DEBUG] 本卦为${originHexagram}，变卦为${variationHexagram}</p>`
-                 const newWindow = window.open("", "_blank", "width=600,height=400");
-                 if(newWindow){
-                   newWindow.document.write(paraHtml);
-                   newWindow.document.title = "Preview";
-                 }
-              }
-            }
-            }
-          >
+          <TButton onClick={generateDivine} activated={showDivine === true}>
             <Sparkles />
             <span>{dict.divine}</span>
           </TButton>
         </div>
-      </div>
+      </animated.div>
+      <animated.div
+        className={clsx(
+          "fixed bottom-0 left-0 right-0",
+          showDivine === false ? "z-0 touch-none select-none hidden" : "z-10"
+        )}
+        style={divineSpring}
+      >
+        <div className="flex flex-col items-center gap-4 p-5">
+          {guaResults ? (
+            <div className="flex justify-evenly w-full">
+              <GuaCard
+                gua={guaResults.originResult as any}
+                className={`text-slate-200 shadow-slate-300 bg-slate-500`}
+                style={{
+                  height: `${boardMeasure.height - actionBarMeasure.height}px`,
+                }}
+                aiResponse={openaiResponse?.origin as string}
+              />
+              <GuaCard
+                gua={guaResults.variationResult as any}
+                className={`text-slate-200 shadow-slate-300 bg-slate-500`}
+                style={{
+                  height: `${boardMeasure.height - actionBarMeasure.height}px`,
+                }}
+                aiResponse={openaiResponse?.variation as string}
+              />
+              <AiCard
+                response={
+                  openaiResponse ? {
+                    origin: guaResults.originResult?.name as string,
+                    variation: guaResults.variationResult?.name as string,
+                    summary: openaiResponse?.summary as string,
+                  } : undefined
+                }
+                className={`text-slate-200 shadow-slate-300 bg-slate-500`}
+                style={{
+                  height: `${boardMeasure.height - actionBarMeasure.height}px`,
+                }}
+              />
+            </div>
+          ) : (
+            <LoadingSpinner size={48} />
+          )}
+          <div className="flex gap-2">
+            <TButton onClick={() => setShowDivine(null)}>
+              <Undo2 />
+            </TButton>
+          </div>
+        </div>
+      </animated.div>
     </div>
   ) : (
     <div className="flex flex-col justify-center items-center h-screen gap-10">
-      <Image
-        src="/logo.svg"
-        alt="logo"
-        width={300}
-        height={76.77}
-      />
+      <Image src="/logo.svg" alt="logo" width={300} height={76.77} />
       <LoadingSpinner size={48} />
     </div>
   );
