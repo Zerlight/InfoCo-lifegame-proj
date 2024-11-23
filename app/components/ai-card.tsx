@@ -19,7 +19,7 @@ const AiCard = ({ className, style, response, ...props }: GuaCardProps) => {
     <div
       className={clsx(
         className,
-        "flex flex-col gap-2 max-w-96 min-w-80 rounded-3xl shadow-lg p-8 overflow-hidden relative cursor-pointer"
+        "flex flex-col gap-2 max-w-96 min-w-80 rounded-3xl shadow-lg p-8 overflow-hidden relative"
       )}
       style={{
         ...style,
