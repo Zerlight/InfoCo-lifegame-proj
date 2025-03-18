@@ -40,7 +40,7 @@ const GameBoard = forwardRef<GameBoardHandles, GameBoardProps>(
   ) => {
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const containerRef = useRef<HTMLDivElement | null>(null);
-    const requestRef = useRef<number>();
+    const requestRef = useRef<number>(0);
     const [dimensions, setDimensions] = useState({ width: 500, height: 500 });
     const [isDrawing, setIsDrawing] = useState(false);
 
