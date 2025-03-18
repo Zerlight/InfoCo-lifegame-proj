@@ -1,10 +1,9 @@
 "use server";
 
-import gua from "@/app/data/gua.json";
+import gua from "@/data/gua.json";
 import OpenAI from "openai";
-import { z } from "zod";
-import { zodResponseFormat } from "openai/helpers/zod";
-import { AvailableLocale } from "@/app/utils/dictionaries";
+import { AvailableLocale } from "@/utils/dictionaries";
+import { validateSessionToken } from "@/utils/2fa";
 
 export const getGuaInfo = async (origin: string, variation: string) => {
   const originResult = gua.gua.find((element) => element.binary === origin);
@@ -17,7 +16,19 @@ export const getGuaInfo = async (origin: string, variation: string) => {
   };
 };
 
-export const getOpenAIResponse = async (origin: string, variation: string, language: AvailableLocale ) => {
+export const getOpenAIResponse = async (
+  origin: string,
+  variation: string,
+  language: AvailableLocale,
+  token: string
+) => {
+  const is2faEnabled = process.env.NEXT_PUBLIC_USE_TWOFA === "true";
+  if (is2faEnabled) {
+    const isAuthed = await validateSessionToken(token);
+    if (!isAuthed) {
+      return null;
+    }
+  }
   const originResult = gua.gua.find(
     (element) => element.binary === origin
   )?.name;

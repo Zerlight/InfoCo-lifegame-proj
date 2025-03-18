@@ -1,10 +1,10 @@
-import en from "@/app/dictionaries/en.json";
+import en from "@/dictionaries/en.json";
 
 const dictionaries = {
   en: () =>
-    import("@/app/dictionaries/en.json").then((module) => module.default),
+    import("@/dictionaries/en.json").then((module) => module.default),
   zh: () =>
-    import("@/app/dictionaries/zh.json").then((module) => module.default),
+    import("@/dictionaries/zh.json").then((module) => module.default),
 };
 
 export type AvailableLocale = keyof typeof dictionaries;

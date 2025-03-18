@@ -2,14 +2,14 @@
 
 import clsx from "clsx";
 import React, { useState, useEffect, useRef } from "react";
-import GameBoard, { GameBoardHandles } from "@/app/components/game-board";
-import { getNextGeneration } from "@/app/utils/game-logic";
+import GameBoard, { GameBoardHandles } from "@/components/game-board";
+import { getNextGeneration } from "@/utils/game-logic";
 import {
   getDictionary,
   AvailableLocale,
   matchLocale,
   Dictionary,
-} from "@/app/utils/dictionaries";
+} from "@/utils/dictionaries";
 import Image from "next/image";
 import {
   Languages,
@@ -25,13 +25,13 @@ import {
   Snail,
   Undo2,
 } from "lucide-react";
-import TButton from "@/app/components/transition-button";
+import TButton from "@/components/transition-button";
 import useMeasure from "react-use-measure";
-import LoadingSpinner from "@/app/components/loading-spinner";
-import { getGuaInfo, getOpenAIResponse } from "@/app/utils/gua-intepreter";
+import LoadingSpinner from "@/components/loading-spinner";
+import { getGuaInfo, getOpenAIResponse } from "@/utils/gua-intepreter";
 import { useSpring, animated } from "@react-spring/web";
-import GuaCard from "@/app/components/gua-card";
-import AiCard from "@/app/components/ai-card";
+import GuaCard from "@/components/gua-card";
+import AiCard from "@/components/ai-card";
 
 const AppPage = () => {
   const [running, setRunning] = useState(false);
@@ -126,7 +126,7 @@ const AppPage = () => {
         return newGrid;
       });
     }
-  }, [boardMeasure, actionBarMeasure]);
+  }, [boardMeasure, actionBarMeasure, boardDimensions]);
 
   useEffect(() => {
     if (
@@ -139,9 +139,19 @@ const AppPage = () => {
       row: grid.length,
       col: grid[0].length,
     });
-  }, [grid]);
+  }, [grid, boardDimensions]);
 
   const generateDivine = async () => {
+    const is2faEnabled = process.env.NEXT_PUBLIC_USE_TWOFA === "true";
+    let token: string | null = null;
+    if (is2faEnabled) {
+      token = sessionStorage.getItem("InfoCo_2fa_token");
+      if (!token) {
+        alert("Please verify 2FA first.");
+        window.location.reload();
+        return;
+      }
+    }
     if (!gameBoardRef.current) return;
     setGuaResults(null);
     setOpenaiResponse(null);
@@ -157,10 +167,17 @@ const AppPage = () => {
       setGuaResults(guaInfo);
       if (!showDivine) setShowDivine(true);
     });
-    getOpenAIResponse(origin, variation, lang).then((openaiResponse) => {
-      setOpenaiResponse(openaiResponse);
-      if (!showDivine) setShowDivine(true);
-    });
+    getOpenAIResponse(origin, variation, lang, token ?? "").then(
+      (openaiResponse) => {
+        if (!openaiResponse) {
+          alert("Session expired. Please verify 2FA first.");
+          window.location.reload();
+          return;
+        }
+        setOpenaiResponse(openaiResponse);
+        if (!showDivine) setShowDivine(true);
+      }
+    );
   };
 
   return dict ? (
@@ -291,7 +308,14 @@ const AppPage = () => {
           {guaResults ? (
             <div className="flex justify-evenly items-end flex-1 bg-background overflow-x-scroll overflow-y-visible px-4 py-8 z-20">
               <GuaCard
-                gua={guaResults.originResult as any}
+                gua={
+                  guaResults.originResult as {
+                    name: string;
+                    binary: string;
+                    "gua-detail": string;
+                    "yao-detail": string[];
+                  }
+                }
                 className={`text-slate-200 shadow-slate-300 bg-slate-500`}
                 aiResponse={openaiResponse?.origin as string}
                 lang={dict}
@@ -310,7 +334,14 @@ const AppPage = () => {
                 lang={dict}
               />
               <GuaCard
-                gua={guaResults.variationResult as any}
+                gua={
+                  guaResults.variationResult as {
+                    name: string;
+                    binary: string;
+                    "gua-detail": string;
+                    "yao-detail": string[];
+                  }
+                }
                 className={`text-slate-200 shadow-slate-300 bg-slate-500`}
                 aiResponse={openaiResponse?.variation as string}
                 lang={dict}

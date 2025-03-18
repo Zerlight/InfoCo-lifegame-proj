@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
+import { TwoFALayout } from "@/components/2fa-provider";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -17,13 +18,9 @@ export const metadata: Metadata = {
   title: "InfoCo Game of Life",
   description: "Conway's Game of Life for infoCo Gamer's Night",
   icons: {
-    icon: '/favicon.svg',
+    icon: "/favicon.svg",
   },
 };
-
-
-
-
 
 export default function RootLayout({
   children,
@@ -36,7 +33,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         suppressHydrationWarning
       >
-        {children}
+        <TwoFALayout>{children}</TwoFALayout>
       </body>
     </html>
   );

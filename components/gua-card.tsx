@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useSpring, animated } from "@react-spring/web";
 import clsx from "clsx";
 import { BookOpenText, BrainCircuit } from "lucide-react";
-import LoadingSpinner from "@/app/components/loading-spinner";
+import LoadingSpinner from "@/components/loading-spinner";
 import { Dictionary } from "../utils/dictionaries";
 
 interface GuaCardProps {

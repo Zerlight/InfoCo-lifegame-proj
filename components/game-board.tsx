@@ -4,6 +4,7 @@ import React, {
   useEffect,
   useImperativeHandle,
   forwardRef,
+  useCallback,
   useLayoutEffect,
 } from "react";
 
@@ -45,7 +46,7 @@ const GameBoard = forwardRef<GameBoardHandles, GameBoardProps>(
 
     useImperativeHandle(ref, () => ({
       getDivinatoryTrigrams() {
-        let aliveCellNumber: number[] = [0, 0, 0, 0, 0, 0];
+        const aliveCellNumber: number[] = [0, 0, 0, 0, 0, 0];
         let counter: number = 0;
         console.log("Grid dimensions:", grid.length, "x", grid[0].length);
         console.log("Rows:", rows, "Cols:", cols);
@@ -90,7 +91,7 @@ const GameBoard = forwardRef<GameBoardHandles, GameBoardProps>(
       );
     }
 
-    const updateDimensions = () => {
+    const updateDimensions = useCallback(() => {
       if (!containerRef.current) return;
       const container = containerRef.current;
       const newWidth = container.clientWidth;
@@ -114,7 +115,7 @@ const GameBoard = forwardRef<GameBoardHandles, GameBoardProps>(
 
         return newGrid;
       });
-    };
+    }, [cellSize, setGrid]);
 
     useEffect(() => {
       if (!containerRef.current) return;
@@ -125,7 +126,7 @@ const GameBoard = forwardRef<GameBoardHandles, GameBoardProps>(
       updateDimensions();
 
       return () => observer.disconnect();
-    }, []);
+    }, [updateDimensions]);
 
     const drawGrid = () => {
       const canvas = canvasRef.current;

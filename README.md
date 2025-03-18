@@ -1,8 +1,10 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# XJTLU InfoCo's Conway's Game of Life Divination
 
-## Getting Started
+This is XJTLU InfoCo's Conway's Game of Life Divination project, powered by [Next.js](https://nextjs.org), bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
-First, run the development server:
+![Project showcase](image-1.png)
+
+## Start up
 
 ```bash
 npm run dev
@@ -13,24 +15,36 @@ pnpm dev
 # or
 bun dev
 ```
+## Configuration
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+In order to start this project, you need to place a `.env` environment variable file inside the project's root folder.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+An example `.env` file: 
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```
+OPENAI_API_KEY=
+OPENAI_BASE_URL=https://api.deepseek.com
+OPENAI_MODEL_NAME=deepseek-chat
 
-## Learn More
+NEXT_PUBLIC_USE_TWOFA=true
+```
 
-To learn more about Next.js, take a look at the following resources:
+### Environment variables definition:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+|  Key  | Explanation | Required? |
+| :---: | :---------: | :-------: |
+| OPENAI_API_KEY | The API key for the app to call with when using openai library to get divination explanations from LLM | YES |
+| OPENAI_BASE_URL | The API endpoint for openai library | YES |
+OPENAI_MODEL_NAME | Assign the model used for LLM | NO |
+| NEXT_PUBLIC_USE_TWOFA | Use 2FA to protect the app from abusing LLM API | NO |
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
-## Deploy on Vercel
+## 2FA Protect
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+This project was designed for InfoCo's onsite recruitment campaign and as you know, it uses LLM API, which may be abused if not being protected. So 2FA is provided.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+If `NEXT_PUBLIC_USE_TWOFA` is set to `true`, the app will enable 2FA protect feature. When Next.js is starting up it will generate a random 2FA secret and output it to terminal in both text and QR code. Please add this 2FA to 2FA apps like `Google Authenticator`.
+
+Whenever a user is accessing the app, they will be prompted to input the 2FA code to use the app. The server will generate a token for then to store in session storage and the expiry time is 10 minutes.
+
+![2FA verification UI](image-2.png)

@@ -1,7 +1,7 @@
 import clsx from "clsx";
 import { BrainCircuit } from "lucide-react";
-import LoadingSpinner from "@/app/components/loading-spinner";
-import { Dictionary } from "../utils/dictionaries";
+import LoadingSpinner from "@/components/loading-spinner";
+import { Dictionary } from "@/utils/dictionaries";
 
 interface GuaCardProps {
   response?: {
