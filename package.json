@@ -14,7 +14,7 @@
     "clsx": "^2.1.1",
     "lodash": "^4.17.21",
     "lucide-react": "^0.460.0",
-    "next": "^15.2.3",
+    "next": "^15.1.2",
     "node-2fa": "^2.0.3",
     "openai": "^4.87.3",
     "qrcode-terminal": "^0.12.0",
