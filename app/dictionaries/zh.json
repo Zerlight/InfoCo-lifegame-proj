@@ -8,5 +8,10 @@
     "run": "运行中",
     "speed": "速度",
     "divine": "占卜中",
-    "language": "中文"
+    "language": "中文",
+    "loadingAI": "正在从大语言模型获取卦象解析，请稍候",
+    "benGua": "本卦：",
+    "bianGua": "变卦：",
+    "summary": "总结：",
+    "flipPormpt": "点击卡片查看爻辞"
 }

@@ -3,6 +3,7 @@ import { useSpring, animated } from "@react-spring/web";
 import clsx from "clsx";
 import { BookOpenText, BrainCircuit } from "lucide-react";
 import LoadingSpinner from "@/app/components/loading-spinner";
+import { Dictionary } from "../utils/dictionaries";
 
 interface GuaCardProps {
   gua: {
@@ -14,6 +15,7 @@ interface GuaCardProps {
   aiResponse: string | null;
   className?: string;
   style?: React.CSSProperties;
+  lang: Dictionary;
 }
 
 const GuaCard = ({
@@ -21,6 +23,7 @@ const GuaCard = ({
   className,
   style,
   aiResponse,
+  lang,
   ...props
 }: GuaCardProps) => {
   const [showDetail, setShowDetail] = useState(false);
@@ -45,33 +48,45 @@ const GuaCard = ({
       onClick={() => setFlipped((state) => !state)}
       className={clsx(
         className,
-        "flex flex-col gap-2 max-w-96 min-w-80 rounded-3xl shadow-lg p-8 overflow-hidden relative cursor-pointer"
+        "flex flex-col gap-2 max-w-96 min-w-72 min-h-96 max-h-[520px] mx-1 rounded-3xl shadow-lg p-8 overflow-hidden relative cursor-pointer select-none flex-1"
       )}
       style={{
         ...style,
         transform: spring.rotateY.to(
-          (rot) => `perspective(600px) rotateY(${rot}deg)`
+          (rot) => `perspective(600px) rotateX(${rot}deg)`
         ),
       }}
       {...props}
     >
-      <div className={clsx("relative", showDetail && "opacity-0")}>
-        <span className="text-6xl font-bold font-serif text-white">
-          {gua.name}
-        </span>
-        <span className="text-7xl opacity-10 font-bold font-mono absolute -top-10 -right-9">
-          {`#${gua.binary}`}
-        </span>
-        <BookOpenText className="mt-6 mb-2" />
-        <span className="text-sm">{gua["gua-detail"]}</span>
-        {aiResponse ? (
-          <>
-            <BrainCircuit className="mt-6 mb-2" />
-            <span className="text-sm overflow-y-scroll">{aiResponse}</span>
-          </>
-        ) : (
-          <LoadingSpinner className="invert opacity-75 mt-4" />
+      <div
+        className={clsx(
+          "flex flex-col justify-between h-full w-full flex-1 gap-6",
+          showDetail && "opacity-0"
         )}
+      >
+        <div>
+          <span className="text-6xl font-bold font-serif text-white">
+            {gua.name}
+          </span>
+          <span className="text-7xl opacity-10 font-bold font-mono absolute -top-5 -right-2">
+            {`#${gua.binary}`}
+          </span>
+          <BookOpenText className="mt-6 mb-2" />
+          <span className="text-sm">{gua["gua-detail"]}</span>
+          {aiResponse ? (
+            <>
+              <BrainCircuit className="mt-6 mb-2" />
+              <div className="overflow-y-scroll max-h-[13.51rem]">
+                <span className="text-sm">{aiResponse}</span>
+              </div>
+            </>
+          ) : (
+            <LoadingSpinner className="invert opacity-75 mt-4" />
+          )}
+        </div>
+        <div className="text-center -mb-5 text-xs font-bold">
+          {lang.flipPormpt}
+        </div>
       </div>
       <div
         className={clsx(
@@ -79,7 +94,7 @@ const GuaCard = ({
           !showDetail && "hidden"
         )}
         style={{
-          transform: "rotateY(180deg)",
+          transform: "rotateX(180deg)",
         }}
       >
         {gua["yao-detail"].map((detail, index) => (

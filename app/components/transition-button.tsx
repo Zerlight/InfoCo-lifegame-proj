@@ -6,7 +6,6 @@ export default function TButton({
   children,
   className,
   activated,
-  activatedContent,
   disabled,
   onClick,
   ...props
@@ -19,7 +18,6 @@ export default function TButton({
   activated?: boolean;
   disabled?: boolean;
   onClick?: () => void;
-  [key: string]: any;
 }) {
   const [textRef, textMeasure] = useMeasure();
   const textSpring = useSpring({

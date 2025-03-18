@@ -1,6 +1,7 @@
 import clsx from "clsx";
 import { BrainCircuit } from "lucide-react";
 import LoadingSpinner from "@/app/components/loading-spinner";
+import { Dictionary } from "../utils/dictionaries";
 
 interface GuaCardProps {
   response?: {
@@ -10,14 +11,21 @@ interface GuaCardProps {
   };
   className?: string;
   style?: React.CSSProperties;
+  lang: Dictionary;
 }
 
-const AiCard = ({ className, style, response, ...props }: GuaCardProps) => {
+const AiCard = ({
+  className,
+  style,
+  response,
+  lang,
+  ...props
+}: GuaCardProps) => {
   return (
     <div
       className={clsx(
         className,
-        "flex flex-col gap-2 max-w-96 min-w-80 rounded-3xl shadow-lg p-8 overflow-hidden relative"
+        "flex flex-col gap-2 max-w-96 min-w-72 min-h-96 max-h-[520px] mx-1 rounded-3xl shadow-lg p-8 overflow-hidden relative select-none flex-1"
       )}
       style={{
         ...style,
@@ -29,20 +37,22 @@ const AiCard = ({ className, style, response, ...props }: GuaCardProps) => {
         {response ? (
           <>
             <div className="text-sm">
-              <span className="font-bold">本卦：</span>
+              <span className="font-bold">{lang.benGua}</span>
               <span>{response.origin}</span>
             </div>
             <div className="text-sm">
-              <span className="font-bold">变卦：</span>
+              <span className="font-bold">{lang.bianGua}</span>
               <span>{response.variation}</span>
             </div>
             <div className="text-sm leading-6">
-              <span className="font-bold">总结：</span>
-              <div className="overflow-y-scroll">{response.summary}</div>
+              <span className="font-bold">{lang.summary}</span>
+              <div className="overflow-y-scroll max-h-72">
+                {response.summary}
+              </div>
             </div>
           </>
         ) : (
-          <LoadingSpinner size={60} className="invert"/>
+          <LoadingSpinner size={60} className="invert" />
         )}
       </div>
     </div>

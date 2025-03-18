@@ -6,7 +6,7 @@ import GameBoard, { GameBoardHandles } from "@/app/components/game-board";
 import { getNextGeneration } from "@/app/utils/game-logic";
 import {
   getDictionary,
-  AvailableLocales,
+  AvailableLocale,
   matchLocale,
   Dictionary,
 } from "@/app/utils/dictionaries";
@@ -42,7 +42,7 @@ const AppPage = () => {
   const [dict, setDict] = useState<Dictionary>();
   const [speed, setSpeed] = useState(2);
   const [grid, setGrid] = useState<boolean[][]>([[]]);
-  const [lang, setLang] = useState<AvailableLocales>(
+  const [lang, setLang] = useState<AvailableLocale>(
     matchLocale(navigator.language)
   );
   const [showDivine, setShowDivine] = useState<boolean | null>(false);
@@ -157,7 +157,7 @@ const AppPage = () => {
       setGuaResults(guaInfo);
       if (!showDivine) setShowDivine(true);
     });
-    getOpenAIResponse(origin, variation).then((openaiResponse) => {
+    getOpenAIResponse(origin, variation, lang).then((openaiResponse) => {
       setOpenaiResponse(openaiResponse);
       if (!showDivine) setShowDivine(true);
     });
@@ -270,7 +270,11 @@ const AppPage = () => {
             <Trash2 />
             <span>{dict.clear}</span>
           </TButton>
-          <TButton onClick={generateDivine} activated={showDivine === true}>
+          <TButton
+            onClick={generateDivine}
+            activated={showDivine === true}
+            disabled={running}
+          >
             <Sparkles />
             <span>{dict.divine}</span>
           </TButton>
@@ -278,51 +282,53 @@ const AppPage = () => {
       </animated.div>
       <animated.div
         className={clsx(
-          "fixed bottom-0 left-0 right-0",
+          "fixed bottom-0 left-0 right-0 h-screen flex items-end w-screen",
           showDivine === false ? "z-0 touch-none select-none hidden" : "z-10"
         )}
         style={divineSpring}
       >
-        <div className="flex flex-col items-center gap-4 p-5">
+        <div className="flex flex-col justify-end gap-1 flex-1 h-full w-full">
           {guaResults ? (
-            <div className="flex justify-evenly w-full">
+            <div className="flex justify-evenly items-end flex-1 bg-background overflow-x-scroll overflow-y-visible px-4 py-8 z-20">
               <GuaCard
                 gua={guaResults.originResult as any}
                 className={`text-slate-200 shadow-slate-300 bg-slate-500`}
-                style={{
-                  height: `${boardMeasure.height - actionBarMeasure.height}px`,
-                }}
                 aiResponse={openaiResponse?.origin as string}
+                lang={dict}
+              />
+              <AiCard
+                response={
+                  openaiResponse
+                    ? {
+                        origin: guaResults.originResult?.name as string,
+                        variation: guaResults.variationResult?.name as string,
+                        summary: openaiResponse?.summary as string,
+                      }
+                    : undefined
+                }
+                className={`text-slate-200 shadow-slate-300 bg-slate-500`}
+                lang={dict}
               />
               <GuaCard
                 gua={guaResults.variationResult as any}
                 className={`text-slate-200 shadow-slate-300 bg-slate-500`}
-                style={{
-                  height: `${boardMeasure.height - actionBarMeasure.height}px`,
-                }}
                 aiResponse={openaiResponse?.variation as string}
-              />
-              <AiCard
-                response={
-                  openaiResponse ? {
-                    origin: guaResults.originResult?.name as string,
-                    variation: guaResults.variationResult?.name as string,
-                    summary: openaiResponse?.summary as string,
-                  } : undefined
-                }
-                className={`text-slate-200 shadow-slate-300 bg-slate-500`}
-                style={{
-                  height: `${boardMeasure.height - actionBarMeasure.height}px`,
-                }}
+                lang={dict}
               />
             </div>
           ) : (
             <LoadingSpinner size={48} />
           )}
-          <div className="flex gap-2">
-            <TButton onClick={() => setShowDivine(null)}>
-              <Undo2 />
-            </TButton>
+          <div className="flex gap-2 self-center pb-2">
+            {openaiResponse !== null && guaResults !== null ? (
+              <TButton onClick={() => setShowDivine(null)}>
+                <Undo2 />
+              </TButton>
+            ) : (
+              <span className="text-xs py-3 text-slate-600 font-bold">
+                {dict.loadingAI}
+              </span>
+            )}
           </div>
         </div>
       </animated.div>

@@ -8,5 +8,10 @@
     "run": "Running",
     "speed": "Speed",
     "divine": "Divining",
-    "language": "English"
+    "language": "English",
+    "loadingAI": "Loading analysis of divination from LLM, please wait",
+    "benGua": "Original Hexagram: ",
+    "bianGua": "Changing Hexagram: ",
+    "summary": "Summary: ",
+    "flipPormpt": "Click the card to see the line statement"
 }

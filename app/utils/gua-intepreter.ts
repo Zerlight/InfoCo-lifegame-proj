@@ -4,6 +4,7 @@ import gua from "@/app/data/gua.json";
 import OpenAI from "openai";
 import { z } from "zod";
 import { zodResponseFormat } from "openai/helpers/zod";
+import { AvailableLocale } from "@/app/utils/dictionaries";
 
 export const getGuaInfo = async (origin: string, variation: string) => {
   const originResult = gua.gua.find((element) => element.binary === origin);
@@ -16,32 +17,30 @@ export const getGuaInfo = async (origin: string, variation: string) => {
   };
 };
 
-export const getOpenAIResponse = async (origin: string, variation: string) => {
-  const originResult = gua.gua.find((element) => element.binary === origin)?.name;
+export const getOpenAIResponse = async (origin: string, variation: string, language: AvailableLocale ) => {
+  const originResult = gua.gua.find(
+    (element) => element.binary === origin
+  )?.name;
   const variationResult = gua.gua.find(
     (element) => element.binary === variation
   )?.name;
 
   const openai = new OpenAI({
-    apiKey: process.env.NEXT_PUBLIC_OPENAI_API_KEY,
-    baseURL: process.env.NEXT_PUBLIC_OPENAI_BASE_URL,
+    apiKey: process.env.OPENAI_API_KEY,
+    baseURL: process.env.OPENAI_BASE_URL,
+    timeout: 20000,
   });
 
-  const Results = z.object({
-    origin: z.string(),
-    variation: z.string(),
-    summary: z.string(),
-  });
-
-  const response = await openai.beta.chat.completions.parse({
-    model: "gpt-4o-mini-2024-07-18",
+  const response = await openai.chat.completions.create({
+    model: process.env.OPENAI_MODEL_NAME ?? "chatgpt-4o-latest",
+    temperature: 1.3,
     messages: [
       {
         role: "system",
         content: [
           {
             type: "text",
-            text: "你是一个周易占卜师。用户会告诉你一次占卜中的本卦和变卦，请你对本卦和变卦各自做出解释，然后再给出一个总结性的占卜结果。",
+            text: `你是一个周易占卜师。用户会告诉你一次占卜中的本卦和变卦，请你对本卦和变卦各自做出解释，然后再给出一个总结性的占卜结果。请将结果输出为JSON，输出的内容语言为：${language}，输出格式：{origin: '<本卦解释>', variation: '<变卦解释>', summary: '<占卜结果总结>'}`,
           },
         ],
       },
@@ -55,16 +54,33 @@ export const getOpenAIResponse = async (origin: string, variation: string) => {
         ],
       },
     ],
-    response_format: zodResponseFormat(Results, "explaination"),
+    response_format: {
+      type: "json_object",
+    },
   });
 
-  const explaination = response.choices[0].message.parsed;
+  let explaination: {
+    origin: string;
+    variation: string;
+    summary: string;
+  } = {
+    origin: "服务器繁忙，请稍后再试",
+    variation: "服务器繁忙，请稍后再试",
+    summary: "服务器繁忙，请稍后再试",
+  };
+
+  try {
+    //@ts-ignore
+    explaination = JSON.parse(response.choices[0].message.content);
+  } catch (error) {
+    console.error("Error parsing OpenAI response:", error);
+  }
 
   return {
-    origin: explaination?.origin,
-    variation: explaination?.variation,
-    summary: explaination?.summary,
-  }
+    origin: explaination.origin,
+    variation: explaination.variation,
+    summary: explaination.summary,
+  };
 
   // mock data
   // return {

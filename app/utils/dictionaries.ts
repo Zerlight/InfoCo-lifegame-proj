@@ -7,14 +7,14 @@ const dictionaries = {
     import("@/app/dictionaries/zh.json").then((module) => module.default),
 };
 
-export type AvailableLocales = keyof typeof dictionaries;
+export type AvailableLocale = keyof typeof dictionaries;
 
 export type Dictionary = typeof en;
 
-export const getDictionary = async (locale: AvailableLocales) =>
+export const getDictionary = async (locale: AvailableLocale) =>
   dictionaries[locale]();
   
-export const matchLocale = (locale: string): AvailableLocales => {
+export const matchLocale = (locale: string): AvailableLocale => {
   if (locale.includes("zh")) return "zh";
   return "en";
 };
