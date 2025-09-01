@@ -62,9 +62,9 @@ export function TwoFALayout({ children }: TwoFALayoutProps) {
       <div className="min-h-screen flex items-center justify-center">
         <form onSubmit={handleSubmit} className="flex flex-col gap-2 p-5">
           <div className="px-3 text-md">
-            <h2 className="text-gray-900">访问此应用需要验证现场动态验证码</h2>
-            <h2 className="text-gray-900">
-              Asscessing this app requires onsite 2FA code verification
+            <h2 className="text-foreground">访问此应用需要验证现场动态验证码</h2>
+            <h2 className="text-foreground">
+              Accessing this app requires onsite 2FA code verification
             </h2>
           </div>
           <input
@@ -72,7 +72,7 @@ export function TwoFALayout({ children }: TwoFALayoutProps) {
             value={code}
             onChange={(e) => setCode(e.target.value)}
             placeholder="Enter your code"
-            className="border-2 border-gray-900 rounded-full py-2 px-4"
+            className="border-2 border-foreground rounded-full py-2 px-4"
             required
           />
           <button
