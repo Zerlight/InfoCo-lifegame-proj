@@ -241,7 +241,10 @@ const AppPage = () => {
       <animated.div
         className={clsx(
           "fixed bottom-0 left-0 right-0 bg-background border-t dark:border-t-neutral-800 border-t-neutral-200",
-          showDivine ? "z-0 touch-none select-none" : "z-10"
+          // When divine view is active, disable pointer events; otherwise raise z-index high
+          showDivine === true
+            ? "z-0 pointer-events-none select-none"
+            : "z-50 pointer-events-auto"
         )}
         style={actionSpring}
       >
@@ -300,7 +303,9 @@ const AppPage = () => {
       <animated.div
         className={clsx(
           "fixed bottom-0 left-0 right-0 h-screen flex items-end w-screen",
-          showDivine === false ? "z-0 touch-none select-none hidden" : "z-10"
+          showDivine === false
+            ? "hidden pointer-events-none"
+            : "z-40 pointer-events-auto"
         )}
         style={divineSpring}
       >
