@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 import { TwoFALayout } from "@/components/2fa-provider";
+import React, { Suspense } from "react";
+import GlobalLoading from "./loading";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -33,7 +35,9 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         suppressHydrationWarning
       >
-        <TwoFALayout>{children}</TwoFALayout>
+        <Suspense fallback={<GlobalLoading />}> 
+          <TwoFALayout>{children}</TwoFALayout>
+        </Suspense>
       </body>
     </html>
   );

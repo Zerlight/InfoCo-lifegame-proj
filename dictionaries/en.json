@@ -13,5 +13,9 @@
     "benGua": "Original Hexagram: ",
     "bianGua": "Changing Hexagram: ",
     "summary": "Summary: ",
-    "flipPormpt": "Click the card to see the line statement"
+    "flipPrompt": "Click to see the line statement",
+    "flipPrompt2": "Click to see the analysis",
+    "stabilized": "Stabilized",
+    "terminate": "Terminate",
+    "terminating": "Terminating"
 }

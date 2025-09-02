@@ -2,8 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { verify2fa, validateSessionToken } from "@/utils/2fa";
-import LoadingSpinner from "./loading-spinner";
-import Image from "next/image";
+import GlobalLoading from "@/app/loading";
 
 interface TwoFALayoutProps {
   children: React.ReactNode;
@@ -48,14 +47,7 @@ export function TwoFALayout({ children }: TwoFALayoutProps) {
     }
   };
 
-  if (verified === null && is2faEnabled) {
-    return (
-      <div className="flex flex-col justify-center items-center h-screen gap-10">
-        <Image src="/logo.svg" alt="logo" width={300} height={76.77} />
-        <LoadingSpinner size={48} />
-      </div>
-    );
-  }
+  if (verified === null && is2faEnabled) return <GlobalLoading />;
 
   if (!verified && is2faEnabled) {
     return (
@@ -74,6 +66,8 @@ export function TwoFALayout({ children }: TwoFALayoutProps) {
             placeholder="Enter your code"
             className="border-2 border-foreground rounded-full py-2 px-4"
             required
+            autoFocus
+            autoComplete="false"
           />
           <button
             type="submit"

@@ -1,9 +1,6 @@
 @import 'tailwindcss';
 
-@theme {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-}
+/* Removed unsupported @theme block (Tailwind v4 compatibility) */
 
 /*
   The default border color has changed to `currentColor` in Tailwind CSS v4,
@@ -39,4 +36,55 @@ body {
   color: var(--foreground);
   background: var(--background);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Equal-height card layout & mobile carousel adjustments */
+.card-equal-wrapper > * {
+  display: flex;
+}
+.card-equal-wrapper > * > div, .card-equal-wrapper > * {
+  height: 100%;
+}
+@media (max-width: 860px) {
+  .card-equal-wrapper {
+    scroll-snap-type: x mandatory;
+  }
+  .card-equal-wrapper > * {
+    scroll-snap-align: start;
+    flex: 0 0 85%;
+  }
+}
+
+/* iOS / mobile browser safe-area paddings */
+.pt-safe-area { padding-top: max(env(safe-area-inset-top), 0.75rem); }
+.pb-safe-area { padding-bottom: env(safe-area-inset-bottom); }
+@supports not (padding: max(0px)) {
+  .pb-safe-area { padding-bottom: env(safe-area-inset-bottom, 0); }
+}
+
+@media (max-width: 480px) {
+  .card-equal-wrapper { max-height: calc(100dvh - 5rem); }
+}
+
+/* Modern viewport height handling (svh/lvh) with fallbacks */
+.vh-fix {
+  height: 100svh;
+  min-height: 100lvh; /* large viewport height when URL bar hidden */
+  min-height: 100dvh; /* fallback */
+}
+@supports not (height: 100svh) {
+  .vh-fix { height: 100dvh; }
+}
+
+/* Thin scrollbars inside cards */
+.custom-scroll-thin::-webkit-scrollbar { width: 6px; }
+.custom-scroll-thin::-webkit-scrollbar-track { background: transparent; }
+.custom-scroll-thin::-webkit-scrollbar-thumb { background: rgba(100,116,139,0.35); border-radius: 4px; }
+.dark .custom-scroll-thin::-webkit-scrollbar-thumb { background: rgba(148,163,184,0.35); }
+.custom-scroll-thin { scrollbar-width: thin; scrollbar-color: rgba(100,116,139,0.35) transparent; }
+.dark .custom-scroll-thin { scrollbar-color: rgba(148,163,184,0.35) transparent; }
+
+/* Utility restore for bg-background if Tailwind theme mapping absent */
+@layer utilities {
+  .bg-background { background-color: var(--background); }
 }

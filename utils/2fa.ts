@@ -18,14 +18,34 @@ const setSecret = (secret: string): void => {
   globalThis.TWOFA_SECRET = secret;
 };
 
-// In-memory storage for session tokens and expiration times
-const sessionStore: Record<string, number> = {};
+// Stateless session token (HMAC signed JSON payload) to avoid loss across server instances
+// Format: base64url(JSON.stringify({exp, iat, v:1})) + "." + base64url(HMAC_SHA256(payload, secret))
+const SESSION_SIGN_SECRET = process.env.TWOFA_SESSION_SIGN_SECRET || "dev-session-sign-secret-change-me";
 
-/**
- * Generates a random session token.
- */
-const generateSessionToken = (): string => {
-  return crypto.randomBytes(32).toString("hex");
+const base64url = (buf: Buffer) => buf.toString("base64").replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
+
+const signPayload = (payload: object): string => {
+  const json = Buffer.from(JSON.stringify(payload));
+  const sig = crypto.createHmac("sha256", SESSION_SIGN_SECRET).update(json).digest();
+  return base64url(json) + "." + base64url(sig);
+};
+
+const verifySignedToken = (token: string): { exp: number; iat: number; v: number } | null => {
+  const parts = token.split(".");
+  if (parts.length !== 2) return null;
+  try {
+    const payloadB64 = parts[0].replace(/-/g, "+").replace(/_/g, "/");
+    const sigB64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+    const payloadBuf = Buffer.from(payloadB64, "base64");
+    const sigBuf = Buffer.from(sigB64, "base64");
+    const expected = crypto.createHmac("sha256", SESSION_SIGN_SECRET).update(payloadBuf).digest();
+    if (!crypto.timingSafeEqual(expected, sigBuf)) return null;
+    const data = JSON.parse(payloadBuf.toString());
+    if (typeof data.exp !== "number" || Date.now() > data.exp) return null;
+    return data;
+  } catch {
+    return null;
+  }
 };
 
 /**
@@ -41,13 +61,9 @@ export const verify2fa = async (code: string): Promise<string | null> => {
   }
   const result = twofa.verifyToken(secret, code);
   if (result && result.delta === 0) {
-    const sessionToken = generateSessionToken();
-    const expirationTime = Date.now() + VALID_DURATION;
-
-    // Store the session token and its expiration time in memory
-    sessionStore[sessionToken] = expirationTime;
-
-    return sessionToken;
+  const now = Date.now();
+  const sessionToken = signPayload({ iat: now, exp: now + VALID_DURATION, v: 1 });
+  return sessionToken;
   }
   return null;
 };
@@ -56,14 +72,8 @@ export const verify2fa = async (code: string): Promise<string | null> => {
  * Validates a session token.
  */
 export const validateSessionToken = async (token: string): Promise<boolean> => {
-  const expirationTime = sessionStore[token];
-  if (expirationTime && expirationTime > Date.now()) {
-    return true;
-  }
-
-  // Remove expired token from the store
-  delete sessionStore[token];
-  return false;
+  if (!token) return false;
+  return !!verifySignedToken(token);
 };
 
 /**

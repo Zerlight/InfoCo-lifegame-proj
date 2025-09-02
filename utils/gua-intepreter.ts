@@ -20,7 +20,8 @@ export const getOpenAIResponse = async (
   origin: string,
   variation: string,
   language: AvailableLocale,
-  token: string
+  token: string,
+  requestId: string
 ) => {
   const is2faEnabled = process.env.NEXT_PUBLIC_USE_TWOFA === "true";
   if (is2faEnabled) {
@@ -29,6 +30,7 @@ export const getOpenAIResponse = async (
       return null;
     }
   }
+  // cancellation removed (non-streaming mode)
   const originResult = gua.gua.find(
     (element) => element.binary === origin
   )?.name;
@@ -81,11 +83,13 @@ export const getOpenAIResponse = async (
   };
 
   try {
-    //@ts-ignore
+    // @ts-ignore
     explaination = JSON.parse(response.choices[0].message.content);
   } catch (error) {
     console.error("Error parsing OpenAI response:", error);
   }
+
+  // cancellation removed
 
   return {
     origin: explaination.origin,

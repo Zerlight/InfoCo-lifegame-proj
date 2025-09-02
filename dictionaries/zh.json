@@ -13,5 +13,9 @@
     "benGua": "本卦：",
     "bianGua": "变卦：",
     "summary": "总结：",
-    "flipPormpt": "点击卡片查看爻辞"
+    "flipPrompt": "点此查看爻辞",
+    "flipPrompt2": "点此查看解析",
+    "stabilized": "已稳定",
+    "terminate": "终止",
+    "terminating": "终止中"
 }
