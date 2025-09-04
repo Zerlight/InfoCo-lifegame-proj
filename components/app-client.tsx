@@ -20,15 +20,12 @@ import {
   Zap,
   Rabbit,
   Snail,
-  Undo2,
 } from "lucide-react";
 import TButton from "@/components/transition-button";
 import useMeasure from "react-use-measure";
-import LoadingSpinner from "@/components/loading-spinner";
 import { getGuaInfo } from "@/utils/gua-intepreter";
 import { useSpring, animated } from "@react-spring/web";
-import GuaCard from "@/components/gua-card";
-import AiCard from "@/components/ai-card";
+import DivinationDialog from "@/components/divination-dialog";
 import clsx from "clsx";
 
 interface AppClientProps {
@@ -75,33 +72,15 @@ const AppClient: React.FC<AppClientProps> = ({ initialDict, initialLang }) => {
   const aiCacheRef = useRef<Record<string, { origin: string; variation: string; summary: string }>>({});
   interface GuaResultItem { name: string; binary: string; "gua-detail": string; "yao-detail": string[] }
   const guaCacheRef = useRef<Record<string, { originResult?: GuaResultItem; variationResult?: GuaResultItem }>>({});
-  // Equal-height card system
-  const cardWrapperRef = useRef<HTMLDivElement | null>(null);
-  const cardRefs = useRef<HTMLDivElement[]>([]);
-  const [cardsHeight, setCardsHeight] = useState<number | null>(null);
 
   // Animations
   const boardSpring = useSpring({
-    opacity: !showDivine ? 1 : 0,
-    transform: showDivine
-      ? "scale(0.5) translateY(100%)"
-      : "scale(1) translateY(0%)",
+    opacity: !showDivine ? 1 : 0.3,
     config: { tension: 180, friction: 24 },
   });
   const actionSpring = useSpring({
     transform: showDivine ? "translateY(100%)" : "translateY(0%)",
     config: { tension: 180, friction: 24 },
-  });
-  const divineSpring = useSpring({
-    opacity: showDivine ? 1 : 0,
-    transform: showDivine
-      ? "scale(1) translateY(0%)"
-      : "scale(1.5) translateY(100%)",
-    config: { tension: 180, friction: 24 },
-    onRest: () => {
-      if (showDivine === true) return;
-      setShowDivine(false);
-    },
   });
 
   // Language switching (client-side fetch for new dicts) – allow returning to initial language
@@ -217,38 +196,6 @@ const AppClient: React.FC<AppClientProps> = ({ initialDict, initialLang }) => {
         alert("AI request failed");
       });
   };
-
-  // Compute equal height after data ready
-  useEffect(() => {
-    if (!showDivine) return;
-    const nodes = cardRefs.current.filter(Boolean);
-    if (nodes.length === 0) return;
-    // Reset height to natural for measurement
-    nodes.forEach(n => n && (n.style.height = 'auto'));
-    const naturalHeights = nodes.map(n => n.scrollHeight);
-    const maxNatural = Math.max(...naturalHeights);
-    const actionH = actionBarMeasure.height || 0;
-    const viewport = window.innerHeight;
-    const margin = 32; // breathing space
-    const available = Math.max(180, viewport - actionH - margin);
-    const target = Math.min(maxNatural, available);
-    setCardsHeight(target);
-  }, [showDivine, guaResults, openaiResponse, dict, actionBarMeasure.height]);
-
-  useEffect(() => {
-    if (!showDivine) return;
-    const onResize = () => {
-      const nodes = cardRefs.current.filter(Boolean);
-      if (nodes.length === 0) return;
-      nodes.forEach(n => (n.style.height = 'auto'));
-      const maxNatural = Math.max(...nodes.map(n => n.scrollHeight));
-      const actionH = actionBarMeasure.height || 0;
-      const available = Math.max(180, window.innerHeight - actionH - 32);
-      setCardsHeight(Math.min(maxNatural, available));
-    };
-    window.addEventListener('resize', onResize);
-    return () => window.removeEventListener('resize', onResize);
-  }, [showDivine, actionBarMeasure.height]);
 
   return (
     <div className="px-5 py-3 flex flex-col min-h-dvh">
@@ -368,73 +315,15 @@ const AppClient: React.FC<AppClientProps> = ({ initialDict, initialLang }) => {
           </TButton>
         </div>
       </animated.div>
-      <animated.div
-        className={clsx(
-          "fixed bottom-0 left-0 right-0 h-screen flex items-end w-screen",
-          showDivine === false
-            ? "hidden pointer-events-none"
-            : "z-40 pointer-events-auto"
-        )}
-        style={divineSpring}
-      >
-        <div className="flex flex-col justify-end gap-1 flex-1 h-full w-full">
-          {guaResults ? (
-            <div
-              ref={cardWrapperRef}
-              className="flex justify-evenly items-end flex-1 bg-background overflow-x-auto overflow-y-visible p-4 z-20 gap-2"
-            >
-              <div
-                ref={(el) => { if (el) cardRefs.current[0] = el; }}
-                style={cardsHeight ? { height: cardsHeight } : undefined}
-                className="flex flex-col flex-1 min-w-72 max-w-96"
-              >
-                <GuaCard
-                  gua={guaResults.originResult as GuaResultItem}
-                  className="text-slate-200 shadow-slate-300 bg-slate-500 flex-1"
-                  aiResponse={openaiResponse?.origin as string}
-                  lang={dict}
-                />
-              </div>
-              <div
-                ref={(el) => { if (el) cardRefs.current[1] = el; }}
-                style={cardsHeight ? { height: cardsHeight } : undefined}
-                className="flex flex-col flex-1 min-w-72 max-w-96"
-              >
-                <AiCard
-                  response={openaiResponse ? { origin: guaResults.originResult?.name as string, variation: guaResults.variationResult?.name as string, summary: openaiResponse?.summary as string } : undefined}
-                  className="text-slate-200 shadow-slate-300 bg-slate-500 flex-1"
-                  lang={dict}
-                />
-              </div>
-              <div
-                ref={(el) => { if (el) cardRefs.current[2] = el; }}
-                style={cardsHeight ? { height: cardsHeight } : undefined}
-                className="flex flex-col flex-1 min-w-72 max-w-96"
-              >
-                <GuaCard
-                  gua={guaResults.variationResult as GuaResultItem}
-                  className="text-slate-200 shadow-slate-300 bg-slate-500 flex-1"
-                  aiResponse={openaiResponse?.variation as string}
-                  lang={dict}
-                />
-              </div>
-            </div>
-          ) : (
-            <LoadingSpinner size={48} />
-          )}
-          <div className="flex gap-2 self-center pb-2">
-            {openaiResponse !== null && guaResults !== null ? (
-              <TButton onClick={() => setShowDivine(null)}>
-                <Undo2 />
-              </TButton>
-            ) : (
-              <span className="text-xs py-3 text-slate-600 font-bold">
-                {dict.loadingAI}
-              </span>
-            )}
-          </div>
-        </div>
-      </animated.div>
+
+      {/* Divination Dialog */}
+      <DivinationDialog
+        isOpen={showDivine === true}
+        onClose={() => setShowDivine(null)}
+        guaResults={guaResults}
+        openaiResponse={openaiResponse}
+        dict={dict}
+      />
     </div>
   );
 };

@@ -7,15 +7,16 @@
     "clear": "已清除",
     "run": "运行中",
     "speed": "速度",
-    "divine": "占卜中",
+    "divine": "占卜结果",
     "language": "中文",
     "loadingAI": "正在从大语言模型获取卦象解析，请稍候",
-    "benGua": "本卦：",
-    "bianGua": "变卦：",
-    "summary": "总结：",
+    "benGua": "本卦",
+    "bianGua": "变卦",
+    "summary": "总结",
     "flipPrompt": "点此查看爻辞",
     "flipPrompt2": "点此查看解析",
     "stabilized": "已稳定",
     "terminate": "终止",
-    "terminating": "终止中"
+    "terminating": "终止中",
+    "loadingDivination": "正在解卦..."
 }

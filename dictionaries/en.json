@@ -7,15 +7,16 @@
     "clear": "Cleared",
     "run": "Running",
     "speed": "Speed",
-    "divine": "Divining",
+    "divine": "Divination Result",
     "language": "English",
     "loadingAI": "Loading analysis of divination from LLM, please wait",
-    "benGua": "Original Hexagram: ",
-    "bianGua": "Changing Hexagram: ",
-    "summary": "Summary: ",
+    "benGua": "Original Hexagram",
+    "bianGua": "Changing Hexagram",
+    "summary": "Summary",
     "flipPrompt": "Click to see the line statement",
     "flipPrompt2": "Click to see the analysis",
     "stabilized": "Stabilized",
     "terminate": "Terminate",
-    "terminating": "Terminating"
+    "terminating": "Terminating",
+    "loadingDivination": "Reading the hexagram..."
 }
