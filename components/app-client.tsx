@@ -132,17 +132,16 @@ const AppClient: React.FC<AppClientProps> = ({ initialDict, initialLang }) => {
     lastStableBoardDimsRef.current = { row: targetRows, col: targetCols };
   }, [boardMeasure.width, boardMeasure.height, actionBarMeasure.height, boardDimensions.col, boardDimensions.row]);
 
-  // Resize logic disabled while divination cards are shown to avoid shrinking during overlay
+  // Recalculate only when overlay not active (avoid measuring scaled element on iOS Safari)
   useEffect(() => {
-    if (showDivine) return; // pause recalculation while overlay active
+    if (showDivine) return; // don't recalc while board is scaled out
     recalcBoardSize();
   }, [recalcBoardSize, showDivine]);
 
-  // On exiting divination view (showDivine becomes false), force a recalculation once
+  // After exiting divination view trigger a delayed recalculation (animation settle)
   useEffect(() => {
     if (showDivine === false) {
-      // slight delay to allow layout to settle after animation
-      const t = setTimeout(() => recalcBoardSize(), 50);
+      const t = setTimeout(() => recalcBoardSize(), 80);
       return () => clearTimeout(t);
     }
   }, [showDivine, recalcBoardSize]);
@@ -290,22 +289,24 @@ const AppClient: React.FC<AppClientProps> = ({ initialDict, initialLang }) => {
           {showDivine ? dict.divineDescription : dict.description}
         </span>
       </div>
-      <animated.div className="flex-1" ref={boardRef} style={boardSpring}>
-        <div className="mx-auto">
-          {boardDimensions.row !== 0 && boardDimensions.col !== 0 && (
-            <GameBoard
-              ref={gameBoardRef}
-              grid={grid}
-              setGrid={setGrid}
-              running={running}
-              mode={mode}
-              cellSize={10}
-              drawGridLines={drawGridLines}
-              speed={speed}
-            />
-          )}
-        </div>
-      </animated.div>
+      <div className="flex-1" ref={boardRef}>
+        <animated.div className="w-full h-full" style={boardSpring}>
+          <div className="mx-auto">
+            {boardDimensions.row !== 0 && boardDimensions.col !== 0 && (
+              <GameBoard
+                ref={gameBoardRef}
+                grid={grid}
+                setGrid={setGrid}
+                running={running}
+                mode={mode}
+                cellSize={10}
+                drawGridLines={drawGridLines}
+                speed={speed}
+              />
+            )}
+          </div>
+        </animated.div>
+      </div>
       <animated.div
         className={clsx(
           "fixed bottom-0 left-0 right-0 bg-background border-t dark:border-t-neutral-800 border-t-neutral-200",
