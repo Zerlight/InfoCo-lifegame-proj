@@ -122,7 +122,11 @@ const GameBoard = forwardRef<GameBoardHandles, GameBoardProps>(function GameBoar
     }
     // 2. Draw inner grid lines over cell fills for consistent visibility all sides
     if (drawGridLinesRef.current) {
-      ctx.strokeStyle = "#ddd";
+      // Detect dark mode and use appropriate grid color
+      const isDarkMode = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const gridColor = isDarkMode ? "#444" : "#ddd";
+      
+      ctx.strokeStyle = gridColor;
       ctx.lineWidth = 1;
       for (let i = 1; i < currentGrid.length; i++) {
         ctx.beginPath();
@@ -139,11 +143,25 @@ const GameBoard = forwardRef<GameBoardHandles, GameBoardProps>(function GameBoar
     }
     if (drawGridLinesRef.current) {
       // outer border drawn last to sit on top of cell fills
-      ctx.strokeStyle = "#ddd";
+      const isDarkMode = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const gridColor = isDarkMode ? "#444" : "#ddd";
+      
+      ctx.strokeStyle = gridColor;
       ctx.lineWidth = 1;
       ctx.strokeRect(0.5, 0.5, width - 1, height - 1);
     }
   };
+
+  // Listen for dark mode changes and trigger redraw
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const handleColorSchemeChange = () => {
+      needsRedrawRef.current = true;
+    };
+
+    mediaQuery.addEventListener('change', handleColorSchemeChange);
+    return () => mediaQuery.removeEventListener('change', handleColorSchemeChange);
+  }, []);
 
   useEffect(() => {
     let frame: number;
