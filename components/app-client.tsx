@@ -44,10 +44,14 @@ const AppClient: React.FC<AppClientProps> = ({ initialDict, initialLang }) => {
   const [grid, setGrid] = useState<boolean[][]>([[]]);
   const [lang, setLang] = useState<AvailableLocale>(initialLang);
   const [showDivine, setShowDivine] = useState<boolean | null>(false);
+  const [isDivining, setIsDivining] = useState(false);
   const [boardRef, boardMeasure] = useMeasure();
   const [actionBarRef, actionBarMeasure] = useMeasure();
   const [boardDimensions, setBoardDimensions] = useState({ row: 0, col: 0 });
-  const lastStableBoardDimsRef = useRef<{row:number;col:number}>({row:0,col:0});
+  const lastStableBoardDimsRef = useRef<{ row: number; col: number }>({
+    row: 0,
+    col: 0,
+  });
   const [guaResults, setGuaResults] = useState<{
     originResult?: {
       name: string;
@@ -69,9 +73,21 @@ const AppClient: React.FC<AppClientProps> = ({ initialDict, initialLang }) => {
   } | null>(null);
   const gameBoardRef = useRef<GameBoardHandles>(null);
   // Caches to avoid re-fetching AI explanation for identical pattern & language
-  const aiCacheRef = useRef<Record<string, { origin: string; variation: string; summary: string }>>({});
-  interface GuaResultItem { name: string; binary: string; "gua-detail": string; "yao-detail": string[] }
-  const guaCacheRef = useRef<Record<string, { originResult?: GuaResultItem; variationResult?: GuaResultItem }>>({});
+  const aiCacheRef = useRef<
+    Record<string, { origin: string; variation: string; summary: string }>
+  >({});
+  interface GuaResultItem {
+    name: string;
+    binary: string;
+    "gua-detail": string;
+    "yao-detail": string[];
+  }
+  const guaCacheRef = useRef<
+    Record<
+      string,
+      { originResult?: GuaResultItem; variationResult?: GuaResultItem }
+    >
+  >({});
 
   // Animations
   const boardSpring = useSpring({
@@ -93,23 +109,42 @@ const AppClient: React.FC<AppClientProps> = ({ initialDict, initialLang }) => {
       setDict(d);
       loadedLangRef.current = lang;
     });
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [lang]);
 
   // Helper to (re)calculate grid size from current measurements
   const recalcBoardSize = React.useCallback(() => {
     if (boardMeasure.width === 0 || boardMeasure.height === 0) return;
     const cellSize = 10;
-    const availableHeight = Math.max(0, boardMeasure.height - actionBarMeasure.height);
+    const availableHeight = Math.max(
+      0,
+      boardMeasure.height - actionBarMeasure.height
+    );
     const targetCols = Math.max(1, Math.floor(boardMeasure.width / cellSize));
     const targetRows = Math.max(1, Math.floor(availableHeight / cellSize));
-    if (targetCols === boardDimensions.col && targetRows === boardDimensions.row) return;
-    setGrid(prev => Array.from({ length: targetRows }, (_, r) =>
-      Array.from({ length: targetCols }, (_, c) => (r < prev.length && c < (prev[0]?.length || 0) ? prev[r][c] : false))
-    ));
+    if (
+      targetCols === boardDimensions.col &&
+      targetRows === boardDimensions.row
+    )
+      return;
+    setGrid((prev) =>
+      Array.from({ length: targetRows }, (_, r) =>
+        Array.from({ length: targetCols }, (_, c) =>
+          r < prev.length && c < (prev[0]?.length || 0) ? prev[r][c] : false
+        )
+      )
+    );
     setBoardDimensions({ row: targetRows, col: targetCols });
     lastStableBoardDimsRef.current = { row: targetRows, col: targetCols };
-  }, [boardMeasure.width, boardMeasure.height, actionBarMeasure.height, boardDimensions.col, boardDimensions.row]);
+  }, [
+    boardMeasure.width,
+    boardMeasure.height,
+    actionBarMeasure.height,
+    boardDimensions.col,
+    boardDimensions.row,
+  ]);
 
   // Recalculate only when overlay not active (avoid measuring scaled element on iOS Safari)
   useEffect(() => {
@@ -126,6 +161,9 @@ const AppClient: React.FC<AppClientProps> = ({ initialDict, initialLang }) => {
   }, [showDivine, recalcBoardSize]);
 
   const generateDivine = async () => {
+    // Prevent multiple simultaneous requests
+    if (isDivining) return;
+
     const is2faEnabled = process.env.NEXT_PUBLIC_USE_TWOFA === "true";
     let token: string | null = null;
     if (is2faEnabled) {
@@ -137,6 +175,8 @@ const AppClient: React.FC<AppClientProps> = ({ initialDict, initialLang }) => {
       }
     }
     if (!gameBoardRef.current) return;
+
+    setIsDivining(true);
     setGuaResults(null);
     setOpenaiResponse(null);
     setShowDivine(false);
@@ -163,6 +203,7 @@ const AppClient: React.FC<AppClientProps> = ({ initialDict, initialLang }) => {
         summary: cachedAI.summary,
       });
       setShowDivine(true);
+      setIsDivining(false);
       return; // done
     }
     getGuaInfo(origin, variation).then((guaInfo) => {
@@ -191,9 +232,11 @@ const AppClient: React.FC<AppClientProps> = ({ initialDict, initialLang }) => {
             summary: data.summary,
           };
         }
+        setIsDivining(false);
       })
       .catch(() => {
         alert("AI request failed");
+        setIsDivining(false);
       });
   };
 
@@ -308,10 +351,9 @@ const AppClient: React.FC<AppClientProps> = ({ initialDict, initialLang }) => {
           <TButton
             onClick={generateDivine}
             activated={showDivine === true}
-            disabled={running}
+            disabled={running || isDivining}
           >
             <Sparkles />
-            <span>{dict.divine}</span>
           </TButton>
         </div>
       </animated.div>

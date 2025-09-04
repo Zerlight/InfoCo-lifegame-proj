@@ -69,7 +69,7 @@ const DivinationDialog: React.FC<DivinationDialogProps> = ({
     >
       <animated.div
         style={dialogSpring}
-        className="relative bg-white dark:bg-slate-800 rounded-none sm:rounded-2xl shadow-2xl w-full max-w-2xl h-full sm:h-auto sm:max-h-[90vh] overflow-hidden flex flex-col"
+        className="relative bg-white dark:bg-neutral-900 rounded-none sm:rounded-2xl shadow-2xl w-full max-w-2xl h-full sm:h-auto sm:max-h-[90vh] overflow-hidden flex flex-col"
         onClick={(e: React.MouseEvent) => e.stopPropagation()}
       >
         {/* Header */}
@@ -129,7 +129,7 @@ const DivinationDialog: React.FC<DivinationDialogProps> = ({
         <div className="p-6 overflow-y-auto flex-1 sm:max-h-[60vh]">
           {!guaResults || !openaiResponse ? (
             <div className="flex flex-col items-center justify-center py-16">
-              <LoadingSpinner size={48} />
+              <LoadingSpinner size={48} className="opacity-70 dark:invert" />
               <span className="mt-4 text-slate-600 dark:text-slate-400">
                 {dict.loadingDivination || "正在解卦..."}
               </span>
@@ -174,7 +174,7 @@ const DivinationDialog: React.FC<DivinationDialogProps> = ({
                     </>
                   ) : (
                     <div className="flex items-center justify-center py-12">
-                      <LoadingSpinner size={48} />
+                      <LoadingSpinner size={48} className="opacity-70 dark:invert" />
                       <span className="ml-4 text-slate-600 dark:text-slate-400">
                         {dict.loadingAI || "AI分析中..."}
                       </span>
