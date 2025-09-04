@@ -69,7 +69,6 @@ const GuaCard = ({
         <div className="flex-1 min-h-0 flex flex-col">
           <div
             className="flex-1 min-h-0 overflow-y-auto custom-scroll-thin pr-1 space-y-4"
-            style={{ touchAction: "pan-y" }}
           >
             <div className="flex flex-col gap-3">
               <span className="text-4xl sm:text-5xl font-bold font-serif text-slate-900 dark:text-slate-100">
@@ -118,7 +117,6 @@ const GuaCard = ({
       >
         <div
           className="flex-1 min-h-0 overflow-y-auto custom-scroll-thin pr-1 flex flex-col gap-3"
-          style={{ touchAction: "pan-y" }}
         >
           {gua["yao-detail"].map((detail, index) => (
             <span
