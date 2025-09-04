@@ -43,8 +43,10 @@ export async function POST(req: NextRequest) {
     summary: "服务器繁忙，请稍后再试",
   };
   try {
-    // @ts-ignore
-    payload = JSON.parse(response.choices[0].message.content);
+    const raw = response.choices[0].message.content;
+    if (typeof raw === 'string') {
+      payload = JSON.parse(raw);
+    }
   } catch (e) {
     console.error("AI JSON parse error", e);
   }

@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect, useImperativeHandle, forwardRef } from "react";
-// @ts-ignore - allow importing worker file (depends on bundler config)
+// Worker import typed via custom declaration in custom.worker.d.ts
 import SimulationWorker from "../workers/simulation.worker.ts?worker";
 
 type GameBoardProps = {
@@ -217,47 +217,7 @@ const GameBoard = forwardRef<GameBoardHandles, GameBoardProps>(function GameBoar
     needsRedrawRef.current = true;
   }, [grid.length, grid[0].length]);
 
-  // Optimized in-place like simulation with lazy row cloning
-  const stepSimulation = (source: boolean[][]): boolean[][] => {
-    const rowsLocal = source.length;
-    const colsLocal = source[0].length;
-    let changed = false;
-    const next: boolean[][] = new Array(rowsLocal);
-    for (let i = 0; i < rowsLocal; i++) {
-      const row = source[i];
-      let newRow: boolean[] | null = null;
-      for (let j = 0; j < colsLocal; j++) {
-        let n = 0;
-        // neighbors (manual bounds checks)
-        if (i > 0) {
-          const pr = source[i - 1];
-          if (j > 0 && pr[j - 1]) n++;
-          if (pr[j]) n++;
-          if (j + 1 < colsLocal && pr[j + 1]) n++;
-        }
-        if (j > 0 && row[j - 1]) n++;
-        if (j + 1 < colsLocal && row[j + 1]) n++;
-        if (i + 1 < rowsLocal) {
-          const nr = source[i + 1];
-          if (j > 0 && nr[j - 1]) n++;
-            if (nr[j]) n++;
-          if (j + 1 < colsLocal && nr[j + 1]) n++;
-        }
-        const alive = row[j];
-        let nextAlive = alive;
-        if (alive) {
-          if (n < 2 || n > 3) nextAlive = false;
-        } else if (n === 3) nextAlive = true;
-        if (nextAlive !== alive) {
-          if (!newRow) newRow = row.slice();
-          newRow[j] = nextAlive;
-          changed = true;
-        }
-      }
-      next[i] = newRow ? newRow : row;
-    }
-    return changed ? next : source;
-  };
+  // (Removed unused stepSimulation helper once fallback & worker paths implemented)
 
   // Worker-based simulation with fallback
   useEffect(() => {
@@ -415,7 +375,7 @@ const GameBoard = forwardRef<GameBoardHandles, GameBoardProps>(function GameBoar
         fallbackRAFRef.current = null;
       }
     };
-  }, [running]);
+  }, [running, setGrid, speed]);
 
   // React to speed changes (worker path handled by message; fallback uses speedRef)
   useEffect(() => {

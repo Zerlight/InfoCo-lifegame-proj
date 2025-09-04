@@ -83,8 +83,10 @@ export const getOpenAIResponse = async (
   };
 
   try {
-    // @ts-ignore
-    explaination = JSON.parse(response.choices[0].message.content);
+    const raw = response.choices[0].message.content;
+    if (typeof raw === 'string') {
+      explaination = JSON.parse(raw);
+    }
   } catch (error) {
     console.error("Error parsing OpenAI response:", error);
   }

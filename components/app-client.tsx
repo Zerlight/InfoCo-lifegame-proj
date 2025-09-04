@@ -73,7 +73,8 @@ const AppClient: React.FC<AppClientProps> = ({ initialDict, initialLang }) => {
   const gameBoardRef = useRef<GameBoardHandles>(null);
   // Caches to avoid re-fetching AI explanation for identical pattern & language
   const aiCacheRef = useRef<Record<string, { origin: string; variation: string; summary: string }>>({});
-  const guaCacheRef = useRef<Record<string, { originResult: any; variationResult: any }>>({});
+  interface GuaResultItem { name: string; binary: string; "gua-detail": string; "yao-detail": string[] }
+  const guaCacheRef = useRef<Record<string, { originResult?: GuaResultItem; variationResult?: GuaResultItem }>>({});
   // Equal-height card system
   const cardWrapperRef = useRef<HTMLDivElement | null>(null);
   const cardRefs = useRef<HTMLDivElement[]>([]);
@@ -103,10 +104,17 @@ const AppClient: React.FC<AppClientProps> = ({ initialDict, initialLang }) => {
     },
   });
 
-  // Language switching (client-side fetch for new dicts)
+  // Language switching (client-side fetch for new dicts) – allow returning to initial language
+  const loadedLangRef = useRef<AvailableLocale>(initialLang);
   useEffect(() => {
-    if (lang === initialLang && dict) return; // initial already provided
-    getDictionary(lang).then(setDict);
+    if (lang === loadedLangRef.current) return; // already loaded
+    let cancelled = false;
+    getDictionary(lang).then((d) => {
+      if (cancelled) return;
+      setDict(d);
+      loadedLangRef.current = lang;
+    });
+    return () => { cancelled = true; };
   }, [lang]);
 
   // Helper to (re)calculate grid size from current measurements
@@ -184,9 +192,9 @@ const AppClient: React.FC<AppClientProps> = ({ initialDict, initialLang }) => {
       if (!showDivine) setShowDivine(true);
       // store deterministic gua results in cache (even if AI not yet returned)
       guaCacheRef.current[cacheKey] = {
-        originResult: guaInfo.originResult,
-        variationResult: guaInfo.variationResult,
-      } as any;
+        originResult: guaInfo.originResult as GuaResultItem | undefined,
+        variationResult: guaInfo.variationResult as GuaResultItem | undefined,
+      };
     });
     // Call API route (non-streaming)
     fetch("/api/divination", {
@@ -291,8 +299,6 @@ const AppClient: React.FC<AppClientProps> = ({ initialDict, initialLang }) => {
               setGrid={setGrid}
               running={running}
               mode={mode}
-              rows={boardDimensions.row}
-              cols={boardDimensions.col}
               cellSize={10}
               drawGridLines={drawGridLines}
               speed={speed}
@@ -382,7 +388,7 @@ const AppClient: React.FC<AppClientProps> = ({ initialDict, initialLang }) => {
                 className="flex flex-col flex-1 min-w-72 max-w-96"
               >
                 <GuaCard
-                  gua={guaResults.originResult as any}
+                  gua={guaResults.originResult as GuaResultItem}
                   className="text-slate-200 shadow-slate-300 bg-slate-500 flex-1"
                   aiResponse={openaiResponse?.origin as string}
                   lang={dict}
@@ -405,7 +411,7 @@ const AppClient: React.FC<AppClientProps> = ({ initialDict, initialLang }) => {
                 className="flex flex-col flex-1 min-w-72 max-w-96"
               >
                 <GuaCard
-                  gua={guaResults.variationResult as any}
+                  gua={guaResults.variationResult as GuaResultItem}
                   className="text-slate-200 shadow-slate-300 bg-slate-500 flex-1"
                   aiResponse={openaiResponse?.variation as string}
                   lang={dict}
